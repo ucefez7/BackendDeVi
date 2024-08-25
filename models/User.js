@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const UserSchema = new mongoose.Schema({
   isUser: { type: Boolean, default: true },
-  isCreator: { type: Boolean, required: false },
+  isCreator: { type: Boolean, default: false }, // Updated to have a default value of false
   isVerified: { type: Boolean, required: true },
   name: { type: String, required: true },
   profileId: { type: String, default: null },

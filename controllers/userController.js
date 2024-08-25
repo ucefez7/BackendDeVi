@@ -44,7 +44,7 @@ exports.getUserById = async function(req, res) {
 
 
 exports.createOrLoginUser = async function(req, res) {
-  const { phoneNumber, name, username, gender, dob, mailAddress, firebaseIdToken, profession, bio, website } = req.body;
+  const { phoneNumber, name, username, gender, dob, mailAddress, firebaseIdToken, profession, bio, website, isCreator } = req.body;
 
   try {
     // Verify Firebase ID Token
@@ -62,7 +62,7 @@ exports.createOrLoginUser = async function(req, res) {
       // If the user does not exist, create a new user with required fields
       user = new User({
         isUser: true,
-        isCreator: false,
+        isCreator: typeof isCreator === 'boolean' ? isCreator : false, // Set isCreator based on input, default to false if not provided
         isVerified: true,
         name,
         username,
@@ -70,9 +70,9 @@ exports.createOrLoginUser = async function(req, res) {
         dob,
         number: phoneNumber,
         mailAddress,
-        profession,  // Now required
-        bio,         // Now required
-        website      // Now required
+        profession,
+        bio,
+        website
       });
 
       await user.save();
@@ -89,6 +89,7 @@ exports.createOrLoginUser = async function(req, res) {
     res.status(500).json({ message: err.message });
   }
 };
+
 
 
 // Update user by ID
