@@ -44,7 +44,7 @@ exports.getUserById = async function(req, res) {
 
 
 exports.createOrLoginUser = async function(req, res) {
-  const { phoneNumber, name, username, gender, dob, mailAddress, firebaseIdToken } = req.body;
+  const { phoneNumber, name, username, gender, dob, mailAddress, firebaseIdToken, profession, bio, website } = req.body;
 
   try {
     // Verify Firebase ID Token
@@ -59,7 +59,7 @@ exports.createOrLoginUser = async function(req, res) {
     let user = await User.findOne({ number: phoneNumber });
 
     if (!user) {
-      // If the user does not exist, create a new user
+      // If the user does not exist, create a new user with required fields
       user = new User({
         isUser: true,
         isCreator: false,
@@ -69,7 +69,10 @@ exports.createOrLoginUser = async function(req, res) {
         gender,
         dob,
         number: phoneNumber,
-        mailAddress
+        mailAddress,
+        profession,  // Now required
+        bio,         // Now required
+        website      // Now required
       });
 
       await user.save();
@@ -86,6 +89,7 @@ exports.createOrLoginUser = async function(req, res) {
     res.status(500).json({ message: err.message });
   }
 };
+
 
 // Update user by ID
 exports.updateUser = async function(req, res) {
@@ -201,3 +205,36 @@ exports.getAllPosts = async function(req, res) {
     res.status(500).json({ message: err.message });
   }
 };
+
+
+// Get a single post by ID
+exports.getPostById = async function(req, res) {
+  try {
+    const post = await UserPost.findById(req.params.postId)
+      .populate({
+        path: 'userId',
+        select: 'isCreator isVerified username name mailAddress following followers',
+        populate: [
+          { path: 'following', select: '_id' },
+          { path: 'followers', select: '_id' }
+        ]
+      });
+
+    if (!post) return res.status(404).json({ message: 'Post not found' });
+
+    const user = post.userId;
+    const postWithUserDetails = {
+      ...post.toObject(),
+      userId: {
+        ...user.toObject(),
+        followingCount: user.following.length,
+        followersCount: user.followers.length,
+      }
+    };
+
+    res.json(postWithUserDetails);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+

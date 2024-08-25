@@ -9,4 +9,8 @@ router.get('/all', userController.getAllPosts);
 
 router.get('/user/:userId', userController.getPostsByUserId);
 
+// Route to get a single post by ID
+router.get('/post/:postId', userController.getPostById);
+
+
 module.exports = router;

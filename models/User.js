@@ -8,12 +8,12 @@ const UserSchema = new mongoose.Schema({
   profileId: { type: String, default: null },
   username: { type: String, required: true, unique: true },
   gender: { type: String, required: true },
-  profession: { type: String, default: null },
+  profession: { type: String, required: true }, // Required field
   dob: { type: String, required: true },
   number: { type: String, required: true },
   mailAddress: { type: String, required: true, unique: true },
-  bio: { type: String, default: null },
-  website: { type: String, default: null },
+  bio: { type: String, required: true },        // Required field
+  website: { type: String, required: true },    // Required field
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', UserSchema);
