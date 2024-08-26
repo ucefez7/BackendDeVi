@@ -25,9 +25,10 @@ router.get('/:id', getUserById);
 router.put('/:id', userAuthMiddleware, updateUser);
 router.delete('/:id', userAuthMiddleware, deleteUser);
 
+
+
 // Network-related routes (from networkController)
 
-//router.post('/follow/:id', userAuthMiddleware, sendFollowRequest);
 router.post('/follow/:id', userAuthMiddleware, sendFollowRequest);
 router.post('/accept-follow/:id', userAuthMiddleware, acceptFollowRequest);
 router.post('/decline-follow/:id', userAuthMiddleware, declineFollowRequest);

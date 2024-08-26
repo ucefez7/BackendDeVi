@@ -4,6 +4,9 @@ const UserRelationship = require('../models/userRelationship');
 // Send Follow Request
 exports.sendFollowRequest = async function(req, res) {
     try {
+        console.log('User ID:', req.user.id);
+        console.log('Target User ID:', req.params.id);
+
         const user = await User.findById(req.user.id);
         const targetUser = await User.findById(req.params.id);
 
@@ -37,10 +40,14 @@ exports.sendFollowRequest = async function(req, res) {
 
         res.status(200).json({ msg: 'Follow request sent or user followed if creator' });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ msg: 'Server error' });
+        console.error('Error details:', error);
+        res.status(500).json({ msg: 'Server error', error: error.message });
     }
 };
+
+
+
+
 
 // Accept Follow Request
 exports.acceptFollowRequest = async function(req, res) {
