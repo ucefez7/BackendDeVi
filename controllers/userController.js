@@ -50,7 +50,9 @@ exports.getUserById = async function(req, res) {
   }
 };
 
-// Create or Login User with Image Upload
+
+
+
 exports.createOrLoginUser = [
   uploadProfileImg.single('profileImg'),
   async function(req, res) {
@@ -65,9 +67,9 @@ exports.createOrLoginUser = [
       profession, 
       bio, 
       website,
-      isUser,
-      isCreator,
-      isVerified 
+      isUser = false,    // Default values
+      isCreator = false,
+      isVerified = false 
     } = req.body;
 
     try {
@@ -137,6 +139,9 @@ exports.createOrLoginUser = [
     }
   }
 ];
+
+
+
 
 // Update user by ID
 exports.updateUser = async function(req, res) {
@@ -281,3 +286,29 @@ exports.getPostById = async function(req, res) {
     res.status(500).json({ message: err.message });
   }
 };
+
+
+
+// Search users by name
+exports.searchUsersByName = async function(req, res) {
+  const searchTerm = req.query.name;
+
+  if (!searchTerm) {
+    return res.status(400).json({ message: 'Name query parameter is required' });
+  }
+
+  try {
+    const users = await User.find({
+      name: { $regex: searchTerm, $options: 'i' }
+    });
+
+    if (users.length === 0) {
+      return res.status(404).json({ message: 'No users found' });
+    }
+
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
