@@ -7,21 +7,30 @@ const {
   deleteUser,
   searchUsersByName,
 } = require('../controllers/userController');
+const {
+  sendFollowRequest,
+  acceptFollowRequest,
+  declineFollowRequest,
+  unfollowUser,
+} = require('../controllers/networkController');
 const userAuthMiddleware = require('../middlewares/userAuthMiddleware');
 
 const router = express.Router();
 
-
-//router.post('/', userAuthMiddleware, createOrLoginUser);
+// User-related routes
 router.post('/', createOrLoginUser);
-// router.get('/', userAuthMiddleware, getUsers);
 router.get('/', getUsers);
-// router.get('/:id', userAuthMiddleware, getUserById);
+router.get('/search', searchUsersByName);
 router.get('/:id', getUserById);
-// router.get('/search', userAuthMiddleware, searchUsersByName);
-router.get('/search',searchUsersByName);
-router.post('/', userAuthMiddleware, createOrLoginUser);
 router.put('/:id', userAuthMiddleware, updateUser);
 router.delete('/:id', userAuthMiddleware, deleteUser);
+
+// Network-related routes (from networkController)
+
+//router.post('/follow/:id', userAuthMiddleware, sendFollowRequest);
+router.post('/follow/:id', userAuthMiddleware, sendFollowRequest);
+router.post('/accept-follow/:id', userAuthMiddleware, acceptFollowRequest);
+router.post('/decline-follow/:id', userAuthMiddleware, declineFollowRequest);
+router.post('/unfollow/:id', userAuthMiddleware, unfollowUser);
 
 module.exports = router;

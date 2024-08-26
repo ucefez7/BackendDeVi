@@ -6,7 +6,7 @@ const cloudinary = require('../config/cloudinaryConfig');
 const { signToken } = require('../utils/jwtUtils');
 const admin = require('../config/firebaseAdmin');
 
-// Configure multer-storage-cloudinary for profile images
+
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
@@ -175,7 +175,7 @@ exports.createPost = [
       const newPost = new UserPost({
         userId: req.body.userId,
         content: req.body.content,
-        image: req.file ? req.file.path : null  // Save image URL
+        image: req.file ? req.file.path : null
       });
 
       await newPost.save();
@@ -289,7 +289,6 @@ exports.getPostById = async function(req, res) {
 
 
 
-// Search users by name
 exports.searchUsersByName = async function(req, res) {
   const searchTerm = req.query.name;
 
@@ -299,7 +298,10 @@ exports.searchUsersByName = async function(req, res) {
 
   try {
     const users = await User.find({
-      name: { $regex: searchTerm, $options: 'i' }
+      $or: [
+        { name: { $regex: searchTerm, $options: 'i' } },
+        { username: { $regex: searchTerm, $options: 'i' } }
+      ]
     });
 
     if (users.length === 0) {
@@ -311,4 +313,5 @@ exports.searchUsersByName = async function(req, res) {
     res.status(500).json({ message: err.message });
   }
 };
+
 
