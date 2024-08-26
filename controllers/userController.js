@@ -6,16 +6,25 @@ const cloudinary = require('../config/cloudinaryConfig');
 const { signToken } = require('../utils/jwtUtils');
 const admin = require('../config/firebaseAdmin');
 
-// Configure multer-storage-cloudinary
+// Configure multer-storage-cloudinary for profile images
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
-    folder: 'user_posts',
+    folder: 'profile_images',
     allowed_formats: ['jpg', 'jpeg', 'png'],
   },
 });
 
-const upload = multer({ storage });
+const postStorage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'post_images',
+    allowed_formats: ['jpg', 'jpeg', 'png'],
+  },
+});
+
+const uploadProfileImg = multer({ storage });
+const uploadPostImg = multer({ storage: postStorage });
 
 // Get all users
 exports.getUsers = async function(req, res) {
@@ -41,56 +50,93 @@ exports.getUserById = async function(req, res) {
   }
 };
 
+// Create or Login User with Image Upload
+exports.createOrLoginUser = [
+  uploadProfileImg.single('profileImg'),
+  async function(req, res) {
+    const { 
+      phoneNumber, 
+      name, 
+      username, 
+      gender, 
+      dob, 
+      mailAddress, 
+      firebaseIdToken, 
+      profession, 
+      bio, 
+      website,
+      isUser,
+      isCreator,
+      isVerified 
+    } = req.body;
 
+    try {
+      // Verify Firebase ID Token
+      const decodedToken = await admin.auth().verifyIdToken(firebaseIdToken);
+      const firebasePhoneNumber = decodedToken.phone_number;
 
-exports.createOrLoginUser = async function(req, res) {
-  const { phoneNumber, name, username, gender, dob, mailAddress, firebaseIdToken, profession, bio, website, isCreator } = req.body;
+      // Ensure the phone number from Firebase matches the one provided
+      if (firebasePhoneNumber !== phoneNumber) {
+        return res.status(401).json({ message: 'Phone number mismatch' });
+      }
 
-  try {
-    // Verify Firebase ID Token
-    const decodedToken = await admin.auth().verifyIdToken(firebaseIdToken);
-    const firebasePhoneNumber = decodedToken.phone_number;
+      let user = await User.findOne({ number: phoneNumber });
 
-    // Ensure the phone number from Firebase matches the one provided
-    if (firebasePhoneNumber !== phoneNumber) {
-      return res.status(401).json({ message: 'Phone number mismatch' });
-    }
+      if (!user) {
+        // Create a new user with all fields manually set by the user
+        user = new User({
+          isUser,
+          isCreator,
+          isVerified,
+          name,
+          username,
+          gender,
+          dob,
+          number: phoneNumber,
+          mailAddress,
+          profession,
+          bio,
+          website,
+          profileImg: req.file ? req.file.path : null  // Save image URL
+        });
 
-    let user = await User.findOne({ number: phoneNumber });
+        await user.save();
+        console.log("User created: ", user);
+      } else {
+        console.log("User logged in: ", user);
+      }
 
-    if (!user) {
-      // If the user does not exist, create a new user with required fields
-      user = new User({
-        isUser: true,
-        isCreator: typeof isCreator === 'boolean' ? isCreator : false, // Set isCreator based on input, default to false if not provided
-        isVerified: true,
-        name,
-        username,
-        gender,
-        dob,
-        number: phoneNumber,
-        mailAddress,
-        profession,
-        bio,
-        website
-      });
-
-      await user.save();
-      console.log("User created: ", user);
       const token = signToken(user._id);
-      return res.status(201).json({ token, userId: user._id });
-    } else {
-      // If user exists, log in and return the user profile
-      console.log("User logged in: ", user);
-      const token = signToken(user._id);
-      return res.status(200).json({ token, userId: user._id });
+
+      // Create a common response object
+      const userResponse = {
+        token, 
+        userId: user._id,
+        isUser: user.isUser,
+        isCreator: user.isCreator,
+        isVerified: user.isVerified,
+        name: user.name,
+        username: user.username,
+        gender: user.gender,
+        dob: user.dob,
+        number: user.number,
+        mailAddress: user.mailAddress,
+        profession: user.profession,
+        bio: user.bio,
+        website: user.website,
+        profileImg: user.profileImg,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt
+      };
+
+      // Return user response for both creation and login scenarios
+      return res.status(user.isNew ? 201 : 200).json(userResponse);
+
+    } catch (err) {
+      res.status(500).json({ message: err.message });
     }
-  } catch (err) {
-    res.status(500).json({ message: err.message });
   }
-};
-
-
+];
 
 // Update user by ID
 exports.updateUser = async function(req, res) {
@@ -103,7 +149,7 @@ exports.updateUser = async function(req, res) {
   }
 };
 
-
+// Delete user
 exports.deleteUser = async function(req, res) {
   try {
     const user = await User.findByIdAndDelete(req.params.id);
@@ -114,10 +160,9 @@ exports.deleteUser = async function(req, res) {
   }
 };
 
-
-
+// Create Post with Image Upload
 exports.createPost = [
-  upload.single('image'),
+  uploadPostImg.single('image'),
   async function(req, res) {
     try {
       console.log("Creating post...");
@@ -125,7 +170,7 @@ exports.createPost = [
       const newPost = new UserPost({
         userId: req.body.userId,
         content: req.body.content,
-        image: req.file ? req.file.path : null
+        image: req.file ? req.file.path : null  // Save image URL
       });
 
       await newPost.save();
@@ -138,7 +183,7 @@ exports.createPost = [
   }
 ];
 
-
+// Get posts by User ID
 exports.getPostsByUserId = async function(req, res) {
   try {
     const posts = await UserPost.find({ userId: req.params.userId })
@@ -171,8 +216,7 @@ exports.getPostsByUserId = async function(req, res) {
   }
 };
 
-
-
+// Get all posts
 exports.getAllPosts = async function(req, res) {
   console.log("Retrieving all posts...");
 
@@ -207,7 +251,6 @@ exports.getAllPosts = async function(req, res) {
   }
 };
 
-
 // Get a single post by ID
 exports.getPostById = async function(req, res) {
   try {
@@ -238,4 +281,3 @@ exports.getPostById = async function(req, res) {
     res.status(500).json({ message: err.message });
   }
 };
-

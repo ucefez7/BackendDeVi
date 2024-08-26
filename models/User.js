@@ -1,19 +1,19 @@
 const mongoose = require('mongoose');
 
 const UserSchema = new mongoose.Schema({
-  isUser: { type: Boolean, default: true },
-  isCreator: { type: Boolean, default: false }, // Updated to have a default value of false
+  isUser: { type: Boolean, required: true },
+  isCreator: { type: Boolean, required: true },
   isVerified: { type: Boolean, required: true },
   name: { type: String, required: true },
-  profileId: { type: String, default: null },
+  profileImg: { type: String, required: true },
   username: { type: String, required: true, unique: true },
   gender: { type: String, required: true },
-  profession: { type: String, required: true }, // Required field
+  profession: { type: String, required: true },
   dob: { type: String, required: true },
   number: { type: String, required: true },
   mailAddress: { type: String, required: true, unique: true },
-  bio: { type: String, required: true },        // Required field
-  website: { type: String, required: true },    // Required field
+  bio: { type: String, required: true },  
+  website: { type: String, required: true },
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', UserSchema);
