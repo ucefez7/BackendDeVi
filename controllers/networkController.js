@@ -85,6 +85,8 @@ exports.acceptFollowRequest = async function(req, res) {
     }
 };
 
+
+
 // Decline Follow Request
 exports.declineFollowRequest = async function(req, res) {
     try {
@@ -118,6 +120,7 @@ exports.declineFollowRequest = async function(req, res) {
         res.status(500).json({ msg: 'Server error' });
     }
 };
+
 
 
 // Unfollow User
@@ -154,5 +157,76 @@ exports.unfollowUser = async function(req, res) {
     } catch (error) {
         console.error(error);
         res.status(500).json({ msg: 'Server error' });
+    }
+};
+
+
+
+
+// Fetch Follow Requests Received
+exports.getFollowRequestsReceived = async function(req, res) {
+
+    console.log("Follow request work aavind")
+    try {
+        if (!req.user || !req.user.id) {
+            return res.status(401).json({ msg: 'User not authenticated' });
+        }
+
+        const user = await User.findById(req.user.id);
+        if (!user) {
+            return res.status(404).json({ msg: 'User not found' });
+        }
+
+        const userRelationship = await UserRelationship.findOne({ userId: user._id });
+        if (!userRelationship) {
+            return res.status(404).json({ msg: 'Relationship data not found' });
+        }
+
+        const followRequestsReceived = await User.find({ 
+            _id: { $in: userRelationship.followRequestsReceived }
+        });
+
+        if (followRequestsReceived.length === 0) {
+            return res.status(200).json({ msg: 'There are no follow requests received now' });
+        }
+
+        res.status(200).json(followRequestsReceived);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ msg: 'Server error', error: error.message });
+    }
+};
+
+
+
+// Fetch Follow Requests Sent
+exports.getFollowRequestsSent = async function(req, res) {
+    try {
+        if (!req.user || !req.user.id) {
+            return res.status(401).json({ msg: 'User not authenticated' });
+        }
+
+        const user = await User.findById(req.user.id);
+        if (!user) {
+            return res.status(404).json({ msg: 'User not found' });
+        }
+
+        const userRelationship = await UserRelationship.findOne({ userId: user._id });
+        if (!userRelationship) {
+            return res.status(404).json({ msg: 'Relationship data not found' });
+        }
+
+        const followRequestsSent = await User.find({ 
+            _id: { $in: userRelationship.followRequestsSent }
+        });
+
+        if (followRequestsSent.length === 0) {
+            return res.status(200).json({ msg: 'No follow requests sent' });
+        }
+
+        res.status(200).json(followRequestsSent);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ msg: 'Server error', error: error.message });
     }
 };

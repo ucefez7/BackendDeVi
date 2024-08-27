@@ -143,7 +143,7 @@ exports.createOrLoginUser = [
 
 
 
-// Update user by ID
+//Update user by ID
 exports.updateUser = async function(req, res) {
   try {
     const user = await User.findByIdAndUpdate(req.params.id, req.body, { new: true });
@@ -153,6 +153,28 @@ exports.updateUser = async function(req, res) {
     res.status(400).json({ message: err.message });
   }
 };
+
+
+// exports.updateUser = async function(req, res) {
+//   try {
+//     const loggedInUserId = req.user.id;
+//     const userIdToUpdate = req.params.id;
+//     if (loggedInUserId !== userIdToUpdate) {
+//       return res.status(403).json({ message: 'You are not authorized to update this profile' });
+//     }
+//     const updatedUser = await User.findByIdAndUpdate(userIdToUpdate, req.body, { new: true });
+//     if (!updatedUser) {
+//       return res.status(404).json({ message: 'User not found' });
+//     }
+//     res.json(updatedUser);
+
+//   } catch (err) {
+//     res.status(400).json({ message: err.message });
+//   }
+// };
+
+
+
 
 // Delete user
 exports.deleteUser = async function(req, res) {
