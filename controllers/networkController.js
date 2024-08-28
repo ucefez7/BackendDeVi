@@ -18,7 +18,6 @@ exports.sendFollowRequest = async function(req, res) {
         if (!userRelationship) {
             userRelationship = new UserRelationship({ userId: user._id });
         }
-
         if (targetUser.isCreator) {
             if (!userRelationship.following.includes(targetUser._id)) {
                 userRelationship.following.push(targetUser._id);

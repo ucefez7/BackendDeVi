@@ -1,16 +1,24 @@
 const express = require('express');
 const router = express.Router();
-const userController = require('../controllers/userController');
+const postController = require('../controllers/postController');
+const userAuthMiddleware = require('../middlewares/userAuthMiddleware');
 
-// Route to create a new post
-router.post('/', userController.createPost);
+router.post('/',userAuthMiddleware, postController.createPost);
 
-router.get('/all', userController.getAllPosts);
+router.get('/all',userAuthMiddleware, postController.getAllPosts);
 
-router.get('/user/:userId', userController.getPostsByUserId);
+router.get('/post/:postId',userAuthMiddleware, postController.getPostById);
 
-// Route to get a single post by ID
-router.get('/post/:postId', userController.getPostById);
+router.put('/:postId', userAuthMiddleware, postController.updatePost);
 
+router.delete('/:postId', userAuthMiddleware, postController.deletePost);
+
+router.post('/comment', userAuthMiddleware, postController.addComment);
+
+router.delete('/comment', userAuthMiddleware, postController.deleteComment);
+
+router.post('/like/:postId', userAuthMiddleware, postController.likePost);
+
+router.post('/unlike/:postId', userAuthMiddleware, postController.unlikePost);
 
 module.exports = router;

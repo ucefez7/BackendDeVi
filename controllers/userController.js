@@ -1,11 +1,8 @@
 const User = require('../models/User');
-const UserPost = require('../models/userPost');
 const multer = require('multer');
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const cloudinary = require('../config/cloudinaryConfig');
 const { signToken } = require('../utils/jwtUtils');
-const admin = require('../config/firebaseAdmin');
-
 
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
@@ -15,19 +12,10 @@ const storage = new CloudinaryStorage({
   },
 });
 
-const postStorage = new CloudinaryStorage({
-  cloudinary: cloudinary,
-  params: {
-    folder: 'post_images',
-    allowed_formats: ['jpg', 'jpeg', 'png'],
-  },
-});
-
 const uploadProfileImg = multer({ storage });
-const uploadPostImg = multer({ storage: postStorage });
 
 // Get all users
-exports.getUsers = async function(req, res) {
+exports.getUsers = async function (req, res) {
   try {
     const users = await User.find();
     console.log("Users are here: " + users);
@@ -38,7 +26,7 @@ exports.getUsers = async function(req, res) {
 };
 
 // Get user by ID
-exports.getUserById = async function(req, res) {
+exports.getUserById = async function (req, res) {
   try {
     const user = await User.findById(req.params.id);
     console.log("User: ", user);
@@ -50,42 +38,31 @@ exports.getUserById = async function(req, res) {
   }
 };
 
-
-
-
+// Create or Login User
 exports.createOrLoginUser = [
   uploadProfileImg.single('profileImg'),
-  async function(req, res) {
-    const { 
-      phoneNumber, 
-      name, 
-      username, 
-      gender, 
-      dob, 
-      mailAddress, 
-      firebaseIdToken, 
-      profession, 
-      bio, 
+  async function (req, res) {
+    const {
+      phoneNumber,
+      name,
+      username,
+      gender,
+      dob,
+      mailAddress,
+      profession,
+      bio,
       website,
-      isUser = false,    // Default values
+      isUser = false,
       isCreator = false,
-      isVerified = false 
+      isVerified = false
     } = req.body;
 
     try {
-      // Verify Firebase ID Token
-      const decodedToken = await admin.auth().verifyIdToken(firebaseIdToken);
-      const firebasePhoneNumber = decodedToken.phone_number;
-
-      // Ensure the phone number from Firebase matches the one provided
-      if (firebasePhoneNumber !== phoneNumber) {
-        return res.status(401).json({ message: 'Phone number mismatch' });
-      }
-
+      // Find user by phone number
       let user = await User.findOne({ number: phoneNumber });
 
       if (!user) {
-        // Create a new user with all fields manually set by the user
+        // Create a new user if not found
         user = new User({
           isUser,
           isCreator,
@@ -99,7 +76,7 @@ exports.createOrLoginUser = [
           profession,
           bio,
           website,
-          profileImg: req.file ? req.file.path : null  // Save image URL
+          profileImg: req.file ? req.file.path : null
         });
 
         await user.save();
@@ -108,11 +85,12 @@ exports.createOrLoginUser = [
         console.log("User logged in: ", user);
       }
 
+      // Generate JWT token
       const token = signToken(user._id);
 
       // Create a common response object
       const userResponse = {
-        token, 
+        token,
         userId: user._id,
         isUser: user.isUser,
         isCreator: user.isCreator,
@@ -140,11 +118,8 @@ exports.createOrLoginUser = [
   }
 ];
 
-
-
-
-//Update user by ID
-exports.updateUser = async function(req, res) {
+// Update user by ID
+exports.updateUser = async function (req, res) {
   try {
     const user = await User.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!user) return res.status(404).json({ message: 'User not found' });
@@ -154,30 +129,8 @@ exports.updateUser = async function(req, res) {
   }
 };
 
-
-// exports.updateUser = async function(req, res) {
-//   try {
-//     const loggedInUserId = req.user.id;
-//     const userIdToUpdate = req.params.id;
-//     if (loggedInUserId !== userIdToUpdate) {
-//       return res.status(403).json({ message: 'You are not authorized to update this profile' });
-//     }
-//     const updatedUser = await User.findByIdAndUpdate(userIdToUpdate, req.body, { new: true });
-//     if (!updatedUser) {
-//       return res.status(404).json({ message: 'User not found' });
-//     }
-//     res.json(updatedUser);
-
-//   } catch (err) {
-//     res.status(400).json({ message: err.message });
-//   }
-// };
-
-
-
-
 // Delete user
-exports.deleteUser = async function(req, res) {
+exports.deleteUser = async function (req, res) {
   try {
     const user = await User.findByIdAndDelete(req.params.id);
     if (!user) return res.status(404).json({ message: 'User not found' });
@@ -187,131 +140,8 @@ exports.deleteUser = async function(req, res) {
   }
 };
 
-// Create Post with Image Upload
-exports.createPost = [
-  uploadPostImg.single('image'),
-  async function(req, res) {
-    try {
-      console.log("Creating post...");
-
-      const newPost = new UserPost({
-        userId: req.body.userId,
-        content: req.body.content,
-        image: req.file ? req.file.path : null
-      });
-
-      await newPost.save();
-      res.status(201).json(newPost);
-      console.log("Post created.");
-
-    } catch (err) {
-      res.status(400).json({ message: err.message });
-    }
-  }
-];
-
-// Get posts by User ID
-exports.getPostsByUserId = async function(req, res) {
-  try {
-    const posts = await UserPost.find({ userId: req.params.userId })
-      .populate({
-        path: 'userId',
-        select: 'isCreator isVerified username name mailAddress following followers',
-        populate: [
-          { path: 'following', select: '_id' },
-          { path: 'followers', select: '_id' }
-        ]
-      });
-
-    if (!posts.length) return res.status(404).json({ message: 'No posts found for this user' });
-
-    const postsWithUserDetails = posts.map(post => {
-      const user = post.userId;
-      return {
-        ...post.toObject(),
-        userId: {
-          ...user.toObject(),
-          followingCount: user.following.length,
-          followersCount: user.followers.length,
-        }
-      };
-    });
-
-    res.json(postsWithUserDetails);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
-
-// Get all posts
-exports.getAllPosts = async function(req, res) {
-  console.log("Retrieving all posts...");
-
-  try {
-    const posts = await UserPost.find({})
-      .populate({
-        path: 'userId',
-        select: 'isCreator isVerified username name mailAddress following followers',
-        populate: [
-          { path: 'following', select: '_id' },
-          { path: 'followers', select: '_id' }
-        ]
-      });
-
-    if (!posts.length) return res.status(404).json({ message: 'No posts found' });
-
-    const postsWithUserDetails = posts.map(post => {
-      const user = post.userId;
-      return {
-        ...post.toObject(),
-        userId: {
-          ...user.toObject(),
-          followingCount: user.following.length,
-          followersCount: user.followers.length,
-        }
-      };
-    });
-
-    res.json(postsWithUserDetails);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
-
-// Get a single post by ID
-exports.getPostById = async function(req, res) {
-  try {
-    const post = await UserPost.findById(req.params.postId)
-      .populate({
-        path: 'userId',
-        select: 'isCreator isVerified username name mailAddress following followers',
-        populate: [
-          { path: 'following', select: '_id' },
-          { path: 'followers', select: '_id' }
-        ]
-      });
-
-    if (!post) return res.status(404).json({ message: 'Post not found' });
-
-    const user = post.userId;
-    const postWithUserDetails = {
-      ...post.toObject(),
-      userId: {
-        ...user.toObject(),
-        followingCount: user.following.length,
-        followersCount: user.followers.length,
-      }
-    };
-
-    res.json(postWithUserDetails);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
-
-
-
-exports.searchUsersByName = async function(req, res) {
+// Search users by name
+exports.searchUsersByName = async function (req, res) {
   const searchTerm = req.query.name;
 
   if (!searchTerm) {
@@ -335,5 +165,3 @@ exports.searchUsersByName = async function(req, res) {
     res.status(500).json({ message: err.message });
   }
 };
-
-
