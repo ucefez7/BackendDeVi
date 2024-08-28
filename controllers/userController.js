@@ -38,9 +38,89 @@ exports.getUserById = async function (req, res) {
   }
 };
 
-// Create or Login User
+// // Create or Login User
+// exports.createOrLoginUser = [
+//   uploadProfileImg.single('profileImg'),
+//   async function (req, res) {
+//     const {
+//       phoneNumber,
+//       name,
+//       username,
+//       gender,
+//       dob,
+//       mailAddress,
+//       profession,
+//       bio,
+//       website,
+//       isUser = false,
+//       isCreator = false,
+//       isVerified = false
+//     } = req.body;
+
+//     try {
+//       // Find user by phone number
+//       let user = await User.findOne({ number: phoneNumber });
+
+//       if (!user) {
+//         // Create a new user if not found
+//         user = new User({
+//           isUser,
+//           isCreator,
+//           isVerified,
+//           name,
+//           username,
+//           gender,
+//           dob,
+//           number: phoneNumber,
+//           mailAddress,
+//           profession,
+//           bio,
+//           website,
+//           profileImg: req.file ? req.file.path : null
+//         });
+
+//         await user.save();
+//         console.log("User created: ", user);
+//       } else {
+//         console.log("User logged in: ", user);
+//       }
+
+//       // Generate JWT token
+//       const token = signToken(user._id);
+
+//       // Create a common response object
+//       const userResponse = {
+//         token,
+//         userId: user._id,
+//         isUser: user.isUser,
+//         isCreator: user.isCreator,
+//         isVerified: user.isVerified,
+//         name: user.name,
+//         username: user.username,
+//         gender: user.gender,
+//         dob: user.dob,
+//         number: user.number,
+//         mailAddress: user.mailAddress,
+//         profession: user.profession,
+//         bio: user.bio,
+//         website: user.website,
+//         profileImg: user.profileImg,
+//         createdAt: user.createdAt,
+//         updatedAt: user.updatedAt
+//       };
+
+//       // Return user response for both creation and login scenarios
+//       return res.status(user.isNew ? 201 : 200).json(userResponse);
+
+//     } catch (err) {
+//       res.status(500).json({ message: err.message });
+//     }
+//   }
+// ];
+
+
+
 exports.createOrLoginUser = [
-  uploadProfileImg.single('profileImg'),
   async function (req, res) {
     const {
       phoneNumber,
@@ -76,7 +156,6 @@ exports.createOrLoginUser = [
           profession,
           bio,
           website,
-          profileImg: req.file ? req.file.path : null
         });
 
         await user.save();
@@ -108,8 +187,6 @@ exports.createOrLoginUser = [
         createdAt: user.createdAt,
         updatedAt: user.updatedAt
       };
-
-      // Return user response for both creation and login scenarios
       return res.status(user.isNew ? 201 : 200).json(userResponse);
 
     } catch (err) {
@@ -117,6 +194,9 @@ exports.createOrLoginUser = [
     }
   }
 ];
+
+
+
 
 // Update user by ID
 exports.updateUser = async function (req, res) {
