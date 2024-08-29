@@ -137,12 +137,12 @@ exports.createOrLoginUser = [
       isVerified = false
     } = req.body;
 
+    console.log('Incoming request to createOrLoginUser:', req.body); 
+
     try {
-      // Find user by phone number
       let user = await User.findOne({ number: phoneNumber });
 
       if (!user) {
-        // Create a new user if not found
         user = new User({
           isUser,
           isCreator,
@@ -167,7 +167,6 @@ exports.createOrLoginUser = [
       // Generate JWT token
       const token = signToken(user._id);
 
-      // Create a common response object
       const userResponse = {
         token,
         userId: user._id,
@@ -187,13 +186,16 @@ exports.createOrLoginUser = [
         createdAt: user.createdAt,
         updatedAt: user.updatedAt
       };
+
       return res.status(user.isNew ? 201 : 200).json(userResponse);
 
     } catch (err) {
+      console.error('Error in createOrLoginUser:', err.message);
       res.status(500).json({ message: err.message });
     }
   }
 ];
+
 
 
 
