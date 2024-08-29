@@ -122,7 +122,7 @@ exports.getUserById = async function (req, res) {
 
 exports.createOrLoginUser = [
   async function (req, res) {
-    res.send('Request received successfully on the backend. Processing...');
+    //res.send('Request received successfully on the backend. Processing...');
     const {
       phoneNumber,
       name,
