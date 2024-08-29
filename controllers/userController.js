@@ -120,9 +120,88 @@ exports.getUserById = async function (req, res) {
 
 
 
+// exports.createOrLoginUser = [
+//   async function (req, res) {
+//     res.send('Request received successfully on the backend. Processing...');
+//     const {
+//       phoneNumber,
+//       name,
+//       username,
+//       gender,
+//       dob,
+//       mailAddress,
+//       profession,
+//       bio,
+//       website,
+//       isUser = false,
+//       isCreator = false,
+//       isVerified = false
+//     } = req.body;
+
+//     console.log('Incoming request to createOrLoginUser:', req.body); 
+
+//     try {
+//       let user = await User.findOne({ number: phoneNumber });
+
+//       if (!user) {
+//         user = new User({
+//           isUser,
+//           isCreator,
+//           isVerified,
+//           name,
+//           username,
+//           gender,
+//           dob,
+//           number: phoneNumber,
+//           mailAddress,
+//           profession,
+//           bio,
+//           website,
+//         });
+
+//         await user.save();
+//         console.log("User created: ", user);
+//       } else {
+//         console.log("User logged in: ", user);
+//       }
+
+//       // Generate JWT token
+//       const token = signToken(user._id);
+
+//       const userResponse = {
+//         token,
+//         userId: user._id,
+//         isUser: user.isUser,
+//         isCreator: user.isCreator,
+//         isVerified: user.isVerified,
+//         name: user.name,
+//         username: user.username,
+//         gender: user.gender,
+//         dob: user.dob,
+//         number: user.number,
+//         mailAddress: user.mailAddress,
+//         profession: user.profession,
+//         bio: user.bio,
+//         website: user.website,
+//         profileImg: user.profileImg,
+//         createdAt: user.createdAt,
+//         updatedAt: user.updatedAt
+//       };
+
+//       // return res.status(user.isNew ? 201 : 200).json(userResponse);
+//       return res.status(user.isNew ? 201 : 200).json(userResponse);
+
+
+//     } catch (err) {
+//       console.error('Error in createOrLoginUser:', err.message);
+//       res.status(500).json({ message: err.message });
+//     }
+//   }
+// ];
+
+
 exports.createOrLoginUser = [
   async function (req, res) {
-    res.send('Request received successfully on the backend. Processing...');
     const {
       phoneNumber,
       name,
@@ -188,14 +267,15 @@ exports.createOrLoginUser = [
         updatedAt: user.updatedAt
       };
 
-      return res.status(user.isNew ? 201 : 200).json(userResponse);
+      return res.status(user.isNew ? 201 : 200).send(userResponse);
 
     } catch (err) {
       console.error('Error in createOrLoginUser:', err.message);
-      res.status(500).json({ message: err.message });
+      return res.status(500).json({ message: err.message });
     }
   }
 ];
+
 
 
 
