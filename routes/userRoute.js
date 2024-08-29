@@ -26,7 +26,8 @@ router.get('/search', searchUsersByName);
 router.get('/:id', getUserById);
 // router.put('/:id', userAuthMiddleware, updateUser);
 router.put('/:id', updateUser);
-router.delete('/:id', userAuthMiddleware, deleteUser);
+//router.delete('/:id', userAuthMiddleware, deleteUser);
+router.delete('/:id', deleteUser);
 
 
 
