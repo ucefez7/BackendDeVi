@@ -15,24 +15,14 @@ connectDB();
 // Middleware
 app.use(cors());
 app.use(express.json());
-
 app.use(morgan('dev')); 
 
-// Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/posts', postRoutes);
+const apiRoutes = express.Router();
+apiRoutes.use('/auth', authRoutes);
+apiRoutes.use(userRoutes);
+apiRoutes.use(postRoutes);
+app.use('/api', apiRoutes);
 
-
-// Initialize Trie
-// (async function init() {
-//     try {
-//       await populateTrie();
-//       console.log('Trie populated successfully');
-//     } catch (err) {
-//       console.error('Error initializing Trie:', err.message);
-//     }
-//   })();
 
 // Server setup
 const PORT = process.env.PORT || 5000;
