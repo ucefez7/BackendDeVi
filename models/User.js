@@ -11,7 +11,6 @@ const UserSchema = new mongoose.Schema({
   profession: { type: String},
   dob: { type: String, required: true },
   phoneNumber: { type: Number, required: true, unique: true },
-  //phoneNumber: { type: Number, required: true },
   mailAddress: { type: String, required: true, unique: true },
   bio: { type: String, required: true },
   website: { type: String, required: true },

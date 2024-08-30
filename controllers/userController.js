@@ -40,82 +40,85 @@ exports.getUserById = async function (req, res) {
 
 
 
-exports.createOrLoginUser = [
-  async function (req, res) {
-    const {
-      phoneNumber,
-      name,
-      username,
-      gender,
-      dob,
-      mailAddress,
-      profession,
-      bio,
-      website,
-      isUser = false,
-      isCreator = false,
-      isVerified = false
-    } = req.body;
+exports.createOrLoginUser = async function (req, res) {
+  const {
+    phoneNumber,
+    name,
+    username,
+    gender,
+    dob,
+    mailAddress,
+    profession,
+    bio,
+    website,
+    profileImg, 
+    isUser = false,
+    isCreator = false,
+    isVerified = false
+  } = req.body;
 
-    console.log('Incoming request to createOrLoginUser:', req.body); 
+  console.log('Incoming request to createOrLoginUser:', req.body);
 
-    try {
-      let user = await User.findOne({ phoneNumber: phoneNumber });
+  try {
+    // Find the user by phone number
+    let user = await User.findOne({ phoneNumber });
 
-      if (!user) {
-        user = new User({
-          isUser,
-          isCreator,
-          isVerified,
-          name,
-          username,
-          gender,
-          dob,
-          phoneNumber: phoneNumber,
-          mailAddress,
-          profession,
-          bio,
-          website,
-        });
+    
+    if (!user) {
+      user = new User({
+        isUser,
+        isCreator,
+        isVerified,
+        name,
+        username,
+        gender,
+        dob,
+        phoneNumber,
+        mailAddress,
+        profession,
+        bio,
+        website,
+        profileImg 
+      });
 
-        await user.save();
-        console.log("User created: ", user);
-      } else {
-        console.log("User logged in: ", user);
-      }
-
-      // Generate JWT token
-      const token = signToken(user._id);
-
-      const userResponse = {
-        token,
-        userId: user._id,
-        isUser: user.isUser,
-        isCreator: user.isCreator,
-        isVerified: user.isVerified,
-        name: user.name,
-        username: user.username,
-        gender: user.gender,
-        dob: user.dob,
-        phoneNumber: user.number,
-        mailAddress: user.mailAddress,
-        profession: user.profession,
-        bio: user.bio,
-        website: user.website,
-        profileImg: user.profileImg,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt
-      };
-
-      return res.status(user.isNew ? 201 : 200).send(userResponse);
-
-    } catch (err) {
-      console.error('Error in createOrLoginUser:', err.message);
-      return res.status(500).json({ message: err.message });
+      await user.save();
+      console.log("User created: ", user);
+    } else {
+      console.log("User logged in: ", user);
     }
-  }
-];
 
+    // Generate JWT token
+    const token = signToken(user._id);
+
+    // Prepare the user response
+    const userResponse = {
+      token,
+      userId: user._id,
+      isUser: user.isUser,
+      isCreator: user.isCreator,
+      isVerified: user.isVerified,
+      name: user.name,
+      username: user.username,
+      gender: user.gender,
+      dob: user.dob,
+      phoneNumber: user.phoneNumber,
+      mailAddress: user.mailAddress,
+      profession: user.profession,
+      bio: user.bio,
+      website: user.website,
+      profileImg: user.profileImg,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt
+    };
+
+    // Send the response
+    return res.status(user.isNew ? 201 : 200).send(userResponse);
+
+  } catch (err) {
+    console.error('Error in createOrLoginUser:', err.message);
+    return res.status(500).json({ message: err.message });
+  }
+};
 
 
 
