@@ -25,14 +25,14 @@ app.use('/api/posts', postRoutes);
 
 
 // Initialize Trie
-(async function init() {
-    try {
-      await populateTrie();
-      console.log('Trie populated successfully');
-    } catch (err) {
-      console.error('Error initializing Trie:', err.message);
-    }
-  })();
+// (async function init() {
+//     try {
+//       await populateTrie();
+//       console.log('Trie populated successfully');
+//     } catch (err) {
+//       console.error('Error initializing Trie:', err.message);
+//     }
+//   })();
 
 // Server setup
 const PORT = process.env.PORT || 5000;
