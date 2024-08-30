@@ -23,6 +23,17 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/posts', postRoutes);
 
+
+// Initialize Trie
+(async function init() {
+    try {
+      await populateTrie();
+      console.log('Trie populated successfully');
+    } catch (err) {
+      console.error('Error initializing Trie:', err.message);
+    }
+  })();
+
 // Server setup
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

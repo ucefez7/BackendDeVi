@@ -12,8 +12,8 @@ const UserSchema = new mongoose.Schema({
   dob: { type: String, required: true },
   phoneNumber: { type: Number, required: true, unique: true },
   mailAddress: { type: String, required: true, unique: true },
-  bio: { type: String, required: true },
-  website: { type: String, required: true },
+  bio: { type: String},
+  website: { type: String},
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', UserSchema);

@@ -3,6 +3,8 @@ const multer = require('multer');
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const cloudinary = require('../config/cloudinaryConfig');
 const { signToken } = require('../utils/jwtUtils');
+const { populateTrie } = require('../services/trie');
+let trie = null;
 
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
@@ -40,6 +42,7 @@ exports.getUserById = async function (req, res) {
 
 
 
+
 exports.createOrLoginUser = async function (req, res) {
   const {
     phoneNumber,
@@ -62,7 +65,6 @@ exports.createOrLoginUser = async function (req, res) {
   try {
     // Find the user by phone number
     let user = await User.findOne({ phoneNumber });
-
     
     if (!user) {
       user = new User({
@@ -146,6 +148,37 @@ exports.deleteUser = async function (req, res) {
   }
 };
 
+
+
+
+// Search users by name
+// exports.searchUsersByName = async function (req, res) {
+//   const searchTerm = req.query.name;
+
+//   if (!searchTerm) {
+//     return res.status(400).json({ message: 'Name query parameter is required' });
+//   }
+
+//   try {
+//     const users = await User.find({
+//       $or: [
+//         { name: { $regex: searchTerm, $options: 'i' } },
+//         { username: { $regex: searchTerm, $options: 'i' } }
+//       ]
+//     });
+
+//     if (users.length === 0) {
+//       return res.status(404).json({ message: 'No users found' });
+//     }
+
+//     res.json(users);
+//   } catch (err) {
+//     res.status(500).json({ message: err.message });
+//   }
+// };
+
+
+
 // Search users by name
 exports.searchUsersByName = async function (req, res) {
   const searchTerm = req.query.name;
@@ -155,11 +188,18 @@ exports.searchUsersByName = async function (req, res) {
   }
 
   try {
+    if (!trie) {
+      trie = await populateTrie();
+    }
+
+    const suggestedUsernames = trie.search(searchTerm);
+
+    if (suggestedUsernames.length === 0) {
+      return res.status(404).json({ message: 'No users found' });
+    }
+
     const users = await User.find({
-      $or: [
-        { name: { $regex: searchTerm, $options: 'i' } },
-        { username: { $regex: searchTerm, $options: 'i' } }
-      ]
+      username: { $in: suggestedUsernames }
     });
 
     if (users.length === 0) {
