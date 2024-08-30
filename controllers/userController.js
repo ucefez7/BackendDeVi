@@ -39,6 +39,7 @@ exports.getUserById = async function (req, res) {
 };
 
 
+
 exports.createOrLoginUser = [
   async function (req, res) {
     const {
@@ -59,7 +60,7 @@ exports.createOrLoginUser = [
     console.log('Incoming request to createOrLoginUser:', req.body); 
 
     try {
-      let user = await User.findOne({ number: phoneNumber });
+      let user = await User.findOne({ phoneNumber: phoneNumber });
 
       if (!user) {
         user = new User({
@@ -70,7 +71,7 @@ exports.createOrLoginUser = [
           username,
           gender,
           dob,
-          number: phoneNumber,
+          phoneNumber: phoneNumber,
           mailAddress,
           profession,
           bio,
@@ -96,7 +97,7 @@ exports.createOrLoginUser = [
         username: user.username,
         gender: user.gender,
         dob: user.dob,
-        number: user.number,
+        phoneNumber: user.number,
         mailAddress: user.mailAddress,
         profession: user.profession,
         bio: user.bio,
