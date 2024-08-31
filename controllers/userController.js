@@ -21,7 +21,27 @@ exports.getUsers = async function (req, res) {
   try {
     const users = await User.find();
     console.log("Users are here: " + users);
-    res.json(users);
+
+    const userResponses = users.map(user => ({
+      userId: user._id,
+      isUser: user.isUser,
+      isCreator: user.isCreator,
+      isVerified: user.isVerified,
+      name: user.name,
+      username: user.username,
+      gender: user.gender,
+      dob: user.dob,
+      phoneNumber: user.phoneNumber,
+      mailAddress: user.mailAddress,
+      profession: user.profession,
+      bio: user.bio,
+      website: user.website,
+      profileImg: user.profileImg,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt
+    }));
+
+    res.json(userResponses);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -34,7 +54,27 @@ exports.getUserById = async function (req, res) {
     console.log("User: ", user);
 
     if (!user) return res.status(404).json({ message: 'User not found' });
-    res.json(user);
+
+    const userResponse = {
+      userId: user._id,
+      isUser: user.isUser,
+      isCreator: user.isCreator,
+      isVerified: user.isVerified,
+      name: user.name,
+      username: user.username,
+      gender: user.gender,
+      dob: user.dob,
+      phoneNumber: user.phoneNumber,
+      mailAddress: user.mailAddress,
+      profession: user.profession,
+      bio: user.bio,
+      website: user.website,
+      profileImg: user.profileImg,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt
+    };
+
+    res.json(userResponse);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -131,7 +171,27 @@ exports.updateUser = async function (req, res) {
   try {
     const user = await User.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!user) return res.status(404).json({ message: 'User not found' });
-    res.json(user);
+
+    const userResponse = {
+      userId: user._id,
+      isUser: user.isUser,
+      isCreator: user.isCreator,
+      isVerified: user.isVerified,
+      name: user.name,
+      username: user.username,
+      gender: user.gender,
+      dob: user.dob,
+      phoneNumber: user.phoneNumber,
+      mailAddress: user.mailAddress,
+      profession: user.profession,
+      bio: user.bio,
+      website: user.website,
+      profileImg: user.profileImg,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt
+    };
+
+    res.json(userResponse);
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
@@ -171,7 +231,26 @@ exports.searchUsersByName = async function (req, res) {
       return res.status(404).json({ message: 'No users found' });
     }
 
-    res.json(users);
+     const userResponses = users.map(user => ({
+      userId: user._id,
+      isUser: user.isUser,
+      isCreator: user.isCreator,
+      isVerified: user.isVerified,
+      name: user.name,
+      username: user.username,
+      gender: user.gender,
+      dob: user.dob,
+      phoneNumber: user.phoneNumber,
+      mailAddress: user.mailAddress,
+      profession: user.profession,
+      bio: user.bio,
+      website: user.website,
+      profileImg: user.profileImg,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt
+    }));
+
+    res.json(userResponses);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

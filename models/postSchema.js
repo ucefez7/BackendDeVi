@@ -11,8 +11,8 @@ const postSchema = new Schema({
   category: { type: String, required: true },
   subCategory: { type: String, required: true },
   likes: [{ type: mongoose.Types.ObjectId, ref: 'User' }],
-  comments: [{ type: mongoose.Types.ObjectId, ref: 'Comment' }], // Array of comment IDs
-  shared: [{ type: mongoose.Types.ObjectId, ref: 'SharedPost' }], // Array of shared post IDs
+  comments: [{ type: mongoose.Types.ObjectId, ref: 'Comment' }], 
+  shared: [{ type: mongoose.Types.ObjectId, ref: 'SharedPost' }], 
   isBlocked: { type: Boolean, default: false },
   sensitive: { type: Boolean, default: false },
 }, { timestamps: true });
