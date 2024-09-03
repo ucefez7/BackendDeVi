@@ -163,15 +163,111 @@ exports.getUserById = async function (req, res) {
 // };
 
 
+// exports.createOrLoginUser = async function (req, res) {
+//   const { phoneNumber } = req.body;
 
+//   console.log('Incoming request to createOrLoginUser:', req.body);
 
+//   try {
+//     let user = await User.findOne({ phoneNumber });
 
+//     if (user) {
+//       console.log("User logged in: ", user);
+//       const token = signToken(user._id);
+//       const userResponse = {
+//         token,
+//         userId: user._id,
+//         userExists: true,
+//         isUser: user.isUser,
+//         isCreator: user.isCreator,
+//         isVerified: user.isVerified,
+//         name: user.name,
+//         username: user.username,
+//         gender: user.gender,
+//         dob: user.dob,
+//         phoneNumber: user.phoneNumber,
+//         mailAddress: user.mailAddress,
+//         profession: user.profession,
+//         bio: user.bio,
+//         website: user.website,
+//         profileImg: user.profileImg,
+//         createdAt: user.createdAt,
+//         updatedAt: user.updatedAt
+//       };
 
+//       return res.status(200).send(userResponse);
+//     } else {
+//       const {
+//         name,
+//         username,
+//         gender,
+//         dob,
+//         mailAddress,
+//         profession,
+//         bio,
+//         website,
+//         profileImg,
+//         isUser = false,
+//         isCreator = false,
+//         isVerified = false
+//       } = req.body;
 
-exports.createOrLoginUser = async function (req, res) {
+//       user = new User({
+//         isUser,
+//         isCreator,
+//         isVerified,
+//         name,
+//         username,
+//         gender,
+//         dob,
+//         phoneNumber,
+//         mailAddress,
+//         profession,
+//         bio,
+//         website,
+//         profileImg
+//       });
+
+//       await user.save();
+//       console.log("User created: ", user);
+
+//       const token = signToken(user._id);
+
+//       const userResponse = {
+//         token,
+//         userId: user._id,
+//         userExists: false,
+//         isUser: user.isUser,
+//         isCreator: user.isCreator,
+//         isVerified: user.isVerified,
+//         name: user.name,
+//         username: user.username,
+//         gender: user.gender,
+//         dob: user.dob,
+//         phoneNumber: user.phoneNumber,
+//         mailAddress: user.mailAddress,
+//         profession: user.profession,
+//         bio: user.bio,
+//         website: user.website,
+//         profileImg: user.profileImg,
+//         createdAt: user.createdAt,
+//         updatedAt: user.updatedAt
+//       };
+
+//       return res.status(201).send(userResponse);
+//     }
+//   } catch (err) {
+//     console.error('Error in createOrLoginUser:', err.message);
+//     return res.status(500).json({ message: err.message });
+//   }
+// };
+
+exports.loginUser = async function (req, res) {
+  console.log("da mone working");
+  
   const { phoneNumber } = req.body;
 
-  console.log('Incoming request to createOrLoginUser:', req.body);
+  console.log('Incoming request to loginUser:', req.body);
 
   try {
     let user = await User.findOne({ phoneNumber });
@@ -202,72 +298,92 @@ exports.createOrLoginUser = async function (req, res) {
 
       return res.status(200).send(userResponse);
     } else {
-      const {
-        name,
-        username,
-        gender,
-        dob,
-        mailAddress,
-        profession,
-        bio,
-        website,
-        profileImg,
-        isUser = false,
-        isCreator = false,
-        isVerified = false
-      } = req.body;
-
-      user = new User({
-        isUser,
-        isCreator,
-        isVerified,
-        name,
-        username,
-        gender,
-        dob,
-        phoneNumber,
-        mailAddress,
-        profession,
-        bio,
-        website,
-        profileImg
-      });
-
-      await user.save();
-      console.log("User created: ", user);
-
-      const token = signToken(user._id);
-
-      const userResponse = {
-        token,
-        userId: user._id,
-        userExists: false,
-        isUser: user.isUser,
-        isCreator: user.isCreator,
-        isVerified: user.isVerified,
-        name: user.name,
-        username: user.username,
-        gender: user.gender,
-        dob: user.dob,
-        phoneNumber: user.phoneNumber,
-        mailAddress: user.mailAddress,
-        profession: user.profession,
-        bio: user.bio,
-        website: user.website,
-        profileImg: user.profileImg,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt
-      };
-
-      return res.status(201).send(userResponse);
+      console.log('User not found');
+      return res.status(404).json({ userExists: false, phoneNumber });
     }
   } catch (err) {
-    console.error('Error in createOrLoginUser:', err.message);
+    console.error('Error in loginUser:', err.message);
     return res.status(500).json({ message: err.message });
   }
 };
 
 
+
+exports.signupUser = async function (req, res) {
+  console.log("da mone working sign up");
+  const {
+    phoneNumber,
+    name,
+    username,
+    gender,
+    dob,
+    mailAddress,
+    profession,
+    bio,
+    website,
+    profileImg,
+    isUser = false,
+    isCreator = false,
+    isVerified = false
+  } = req.body;
+
+  console.log('Incoming request to signupUser:', req.body);
+
+  try {
+    let existingUser = await User.findOne({ phoneNumber });
+
+    if (existingUser) {
+      return res.status(400).json({ message: 'User already exists. Please log in.' });
+    }
+
+    const user = new User({
+      isUser,
+      isCreator,
+      isVerified,
+      name,
+      username,
+      gender,
+      dob,
+      phoneNumber,
+      mailAddress,
+      profession,
+      bio,
+      website,
+      profileImg
+    });
+
+    await user.save();
+    console.log("User created: ", user);
+
+    const token = signToken(user._id);
+
+    const userResponse = {
+      token,
+      userId: user._id,
+      userExists: false,
+      isUser: user.isUser,
+      isCreator: user.isCreator,
+      isVerified: user.isVerified,
+      name: user.name,
+      username: user.username,
+      gender: user.gender,
+      dob: user.dob,
+      phoneNumber: user.phoneNumber,
+      mailAddress: user.mailAddress,
+      profession: user.profession,
+      bio: user.bio,
+      website: user.website,
+      profileImg: user.profileImg,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt
+    };
+
+    return res.status(201).send(userResponse);
+  } catch (err) {
+    console.error('Error in signupUser:', err.message);
+    return res.status(500).json({ message: err.message });
+  }
+};
 
 
 

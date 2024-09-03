@@ -1,8 +1,10 @@
 const express = require('express');
 const {
+  loginUser,
+  signupUser,
   getUsers,
   getUserById,
-  createOrLoginUser,
+  //createOrLoginUser,
   updateUser,
   deleteUser,
   searchUsersByName,
@@ -20,7 +22,9 @@ const userAuthMiddleware = require('../middlewares/userAuthMiddleware');
 const router = express.Router();
 
 // User-related routes
-router.post('/users', createOrLoginUser);           // POST /api/users
+//router.post('/users', createOrLoginUser);           // POST /api/users
+router.post('/users/login', loginUser);      // POST /api/users/login
+router.post('/users/signup', signupUser);    // POST /api/users/signup
 router.get('/users', getUsers);                     // GET /api/users
 router.get('/users/search', searchUsersByName);     // GET /api/users/search
 router.get('/users/:id', getUserById);              // GET /api/users/:id
