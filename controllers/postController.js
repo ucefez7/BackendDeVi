@@ -61,6 +61,8 @@ exports.createPost = [
 
 // Get all posts
 exports.getAllPosts = async (req, res, next) => {
+  console.log("All post loading...");
+  
   try {
     const posts = await PostModel.find({ isBlocked: false })
       .populate({
@@ -196,6 +198,12 @@ exports.deletePost = async (req, res, next) => {
   }
 };
 
+
+
+
+
+
+
 // Add Comment To Post
 exports.addComment = async (req, res, next) => {
   const userId = req.user.id;
@@ -221,8 +229,6 @@ exports.addComment = async (req, res, next) => {
     next(error);
   }
 };
-
-
 
 // Delete Comment From Post
 exports.deleteComment = async (req, res, next) => {

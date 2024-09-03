@@ -5,8 +5,10 @@ const userAuthMiddleware = require('../middlewares/userAuthMiddleware');
 
 // Post-related routes
 router.post('/posts/create-post', userAuthMiddleware, postController.createPost);
-router.get('/posts/all', userAuthMiddleware, postController.getAllPosts);
-router.get('/posts/:postId', userAuthMiddleware, postController.getPostById);
+// router.get('/posts/all', userAuthMiddleware, postController.getAllPosts);
+// router.get('/posts/:postId', userAuthMiddleware, postController.getPostById);
+router.get('/posts/all', postController.getAllPosts);
+router.get('/posts/:postId', postController.getPostById);
 router.put('/posts/:postId', userAuthMiddleware, postController.updatePost);
 router.delete('/posts/:postId', userAuthMiddleware, postController.deletePost);
 
