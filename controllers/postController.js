@@ -18,6 +18,9 @@ const postStorage = new CloudinaryStorage({
 
 const uploadPostImg = multer({ storage: postStorage });
 
+
+
+
 // Create a new post with image upload
 exports.createPost = [
   uploadPostImg.single('media'),
@@ -52,6 +55,9 @@ exports.createPost = [
     }
   },
 ];
+
+
+
 
 // Get all posts
 exports.getAllPosts = async (req, res, next) => {
@@ -89,6 +95,9 @@ exports.getAllPosts = async (req, res, next) => {
   }
 };
 
+
+
+
 // Get a single post by ID
 exports.getPostById = async (req, res, next) => {
   const { postId } = req.params;
@@ -124,6 +133,9 @@ exports.getPostById = async (req, res, next) => {
   }
 };
 
+
+
+
 // Update a post
 exports.updatePost = async (req, res, next) => {
   const userId = req.user.id;
@@ -156,6 +168,9 @@ exports.updatePost = async (req, res, next) => {
     next(error);
   }
 };
+
+
+
 
 // Delete a post
 exports.deletePost = async (req, res, next) => {
@@ -207,6 +222,8 @@ exports.addComment = async (req, res, next) => {
   }
 };
 
+
+
 // Delete Comment From Post
 exports.deleteComment = async (req, res, next) => {
   const userId = req.user.id;
@@ -242,6 +259,8 @@ exports.deleteComment = async (req, res, next) => {
   }
 };
 
+
+
 // Like Post
 exports.likePost = async (req, res, next) => {
   const userId = req.user.id;
@@ -265,6 +284,8 @@ exports.likePost = async (req, res, next) => {
     next(error);
   }
 };
+
+
 
 // Unlike Post
 exports.unlikePost = async (req, res, next) => {

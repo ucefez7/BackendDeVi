@@ -28,7 +28,8 @@ router.put('/users/:id', updateUser);               // PUT /api/users/:id
 router.delete('/users/:id', deleteUser);            // DELETE /api/users/:id
 
 // Network-related routes
-router.post('/users/follow/:id', userAuthMiddleware, sendFollowRequest);         // POST /api/users/follow/:id
+// router.post('/users/follow/:id', userAuthMiddleware, sendFollowRequest);         // POST /api/users/follow/:id
+router.post('/users/follow/:id',userAuthMiddleware, sendFollowRequest);
 router.post('/users/accept-follow/:id', userAuthMiddleware, acceptFollowRequest); // POST /api/users/accept-follow/:id
 router.post('/users/decline-follow/:id', userAuthMiddleware, declineFollowRequest); // POST /api/users/decline-follow/:id
 router.post('/users/unfollow/:id', userAuthMiddleware, unfollowUser);             // POST /api/users/unfollow/:id

@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const UserRelationship = require('../models/userRelationship');
 
+
 // Send Follow Request
 exports.sendFollowRequest = async function(req, res) {
     try {
@@ -10,9 +11,13 @@ exports.sendFollowRequest = async function(req, res) {
         const user = await User.findById(req.user.id);
         const targetUser = await User.findById(req.params.id);
 
+        if (!user) return res.json({ message: 'User not found' });
+
         if (!targetUser) {
-            return res.status(404).json({ msg: 'User not found' });
+            return res.status(404).json({ msg: 'Target User not found' });
         }
+
+        console.log('Target User Data:', targetUser);
 
         let userRelationship = await UserRelationship.findOne({ userId: user._id });
         if (!userRelationship) {
@@ -46,6 +51,58 @@ exports.sendFollowRequest = async function(req, res) {
 
 
 
+// // Send Follow Request
+// exports.sendFollowRequest = async function(req, res) {
+//     try {
+        
+//         console.log('Target User ID:', req.params.id);
+
+//         const user= '66d56f393ba6e42febc4c6b7'
+//         const targetUser = await User.findById(req.params.id);
+
+//         if (!user) return res.status(404).json({ message: 'User not found' });
+
+//         if (!targetUser) {
+//             return res.status(404).json({ msg: 'Target User not found' });
+//         }
+
+//         console.log('Target User Data:', targetUser);
+
+//         let userRelationship = await UserRelationship.findOne({ userId: user });
+//         if (!userRelationship) {
+//             userRelationship = new UserRelationship({ userId: user });
+//         }
+//         if (targetUser.isCreator) {
+//             if (!userRelationship.following.includes(targetUser._id)) {
+//                 userRelationship.following.push(targetUser._id);
+//                 await userRelationship.save();
+//             }
+//         } else {
+//             if (!userRelationship.following.includes(targetUser._id) && !userRelationship.followRequestsSent.includes(targetUser._id)) {
+//                 userRelationship.followRequestsSent.push(targetUser._id);
+//                 await userRelationship.save();
+
+//                 let targetUserRelationship = await UserRelationship.findOne({ userId: targetUser._id });
+//                 if (!targetUserRelationship) {
+//                     targetUserRelationship = new UserRelationship({ userId: targetUser._id });
+//                 }
+//                 targetUserRelationship.followRequestsReceived.push(user);
+//                 await targetUserRelationship.save();
+//             }
+//         }
+
+//         res.status(200).json({ msg: 'Follow request sent or user followed if creator' });
+//     } catch (error) {
+//         console.error('Error details:', error);
+//         res.status(500).json({ msg: 'Server error', error: error.message });
+//     }
+// };
+
+
+
+
+
+
 
 
 // Accept Follow Request
@@ -53,6 +110,10 @@ exports.acceptFollowRequest = async function(req, res) {
     try {
         const user = await User.findById(req.user.id);
         const requestingUser = await User.findById(req.params.id);
+        console.log(`This is the current user ${user}`);
+        console.log(`This is target user ${requestingUser}`);
+        
+        
 
         if (!requestingUser) {
             return res.status(404).json({ msg: 'User not found' });

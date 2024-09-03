@@ -1,15 +1,32 @@
-const { verifyToken } = require('../utils/userUtils');
+const { verifyToken } = require('../utils/jwtUtils');
+const User = require('../models/User');
+const createHttpError = require('http-errors');
 
-const userAuthMiddleware = (req, res, next) => {
-  const token = req.header('Authorization');
-  if (!token) return res.status(401).json({ message: 'No token, authorization denied' });
-
+const userAuthMiddleware = async (req, res, next) => {
   try {
-    const decoded = verifyToken(token);
-    req.user = decoded.id; // Attach the decoded user ID to the request object
-    next();
-  } catch (err) {
-    res.status(401).json({ message: 'Token is not valid' });
+    let token;
+
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+      token = req.headers.authorization.split(' ')[1];
+      console.log('Extracted Token:', token);  
+
+      const decoded = verifyToken(token);
+      console.log('Decoded Token:', decoded);
+      if (!decoded.id ) {
+        throw createHttpError(401, 'Token payload is missing required fields');
+      }
+
+        const user = await User.findById(decoded.id);
+        
+        if (!user) {
+          throw createHttpError(404, 'User not found');
+        }
+        req.user = user;
+        next()
+    } 
+  } catch (error) {
+    console.error('Error in Auth Middleware:', error);
+    next(error);
   }
 };
 
