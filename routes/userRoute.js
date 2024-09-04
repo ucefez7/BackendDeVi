@@ -31,7 +31,7 @@ router.post('/users/signup', signupUser);    // POST /api/users/signup
 router.get('/users',userAuthMiddleware, getUsers);                     // GET /api/users
 router.get('/users/search',userAuthMiddleware, searchUsersByName);     // GET /api/users/search
 router.get('/users/:id',userAuthMiddleware, getUserById);              // GET /api/users/:id
-router.post('/signout', userAuthMiddleware, signoutUser);
+router.post('/users/signout', userAuthMiddleware, signoutUser);
 router.put('/users/:id',userAuthMiddleware, updateUser);               // PUT /api/users/:id
 router.delete('/users/:id',userAuthMiddleware, deleteUser);            // DELETE /api/users/:id
 
@@ -49,6 +49,7 @@ router.post('/users/unfollow/:id', userAuthMiddleware, unfollowUser);           
 // Follow requests
 router.post('/users/follow-requests-received', userAuthMiddleware, getFollowRequestsReceived); // POST /api/users/follow-requests-received
 router.post('/users/follow-requests-sent', userAuthMiddleware, getFollowRequestsSent);      // POST /api/users/follow-requests-sent
+
 router.get('/users/followers/:id', userAuthMiddleware,getFollowers);
 
 module.exports = router;

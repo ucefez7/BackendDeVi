@@ -4,6 +4,8 @@ const multer = require('multer');
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const cloudinary = require('../config/cloudinaryConfig');
 const { signToken } = require('../utils/jwtUtils');
+const TokenBlacklist = require('../models/TokenBlacklist');
+
 // const { populateTrie } = require('../services/trie');
 // let trie = null;
 
@@ -201,13 +203,17 @@ exports.searchUsersByName = async function (req, res) {
   }
 };
 
-// User sign-out
-exports.signoutUser = async function (req, res) {
+
+
+//logout
+exports.signoutUser = async (req, res) => {
   try {
-    // Logic to invalidate the user session or token (implementation depends on how tokens are managed)
-    req.logout(); // Example if using passport.js
+    const token = req.headers.authorization.split(' ')[1]; 
+    await TokenBlacklist.create({ token });
+
     res.status(200).json({ message: 'Successfully signed out' });
   } catch (err) {
+    console.error('Error signing out:', err);
     res.status(500).json({ message: 'Error signing out' });
   }
 };
@@ -559,3 +565,4 @@ exports.getUserRelations = async function(req, res) {
 //     res.status(500).json({ message: err.message });
 //   }
 // };
+
