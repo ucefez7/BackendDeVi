@@ -392,69 +392,11 @@ exports.removeSavedPost = async (req, res, next) => {
 // };
 
 
-// Save a Post
-exports.savePost = async (req, res, next) => {
-  const userId = req.user.id;
-  const { postId } = req.params;
-
-  try {
-    const post = await PostModel.findById(postId);
-    
-    if (!post) {
-      throw createHttpError(404, 'Post not found');
-    }
-
-    let savePost = await SavePostModel.findOne({ userId });
-
-    if (!savePost) {
-      savePost = await SavePostModel.create({ userId, posts: [postId] });
-    } else {
-      if (savePost.posts.includes(postId)) {
-        throw createHttpError(400, 'Post is already saved');
-      }
-      savePost.posts.push(postId);
-      await savePost.save();
-    }
-
-    res.status(200).json({ status: 'success', data: savePost });
-  } catch (error) {
-    next(error);
-  }
-};
-
-// Remove a Post from Saved Posts
-exports.removeSavedPost = async (req, res, next) => {
-  const userId = req.user.id;
-  const { postId } = req.params;
-
-  try {
-    const savePost = await SavePostModel.findOne({ userId });
-
-    if (!savePost) {
-      throw createHttpError(404, 'No saved posts found for this user');
-    }
-
-    if (!savePost.posts.includes(postId)) {
-      throw createHttpError(404, 'Post not found in saved posts');
-    }
-
-    savePost.posts = savePost.posts.filter(id => id.toString() !== postId.toString());
-    await savePost.save();
-
-    res.status(200).json({ status: 'success', data: savePost });
-  } catch (error) {
-    next(error);
-  }
-};
-
-
 
 // Get Saved Posts
 exports.getSavedPosts = async (req, res, next) => {
-  console.log("working anno");
-  
   const userId = req.user.id;
-  console.log("ethannn user id: "+userId);
+  const { postId } = req.params;
 
   try {
     const savePost = await SavePostModel.findOne({ userId }).populate('posts');

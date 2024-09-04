@@ -21,9 +21,7 @@ router.post('/posts/unlike/:postId', userAuthMiddleware, postController.unlikePo
 router.post('/posts/save/:postId', userAuthMiddleware, postController.savePost);
 router.delete('/posts/save/:postId', userAuthMiddleware, postController.removeSavedPost);
 
-// router.post('/posts/saved', ()=>{
-//     console.log("evde ok ann, data verind");
-// });
-router.get('/posts/saved', postController.getSavedPosts);
+router.get('/posts/saved/:postId',userAuthMiddleware, postController.getSavedPosts);
+// router.get('/posts/saved',userAuthMiddleware, postController.getSavedPosts);
 
 module.exports = router;
