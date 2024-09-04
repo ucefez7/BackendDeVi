@@ -290,3 +290,27 @@ exports.getFollowRequestsSent = async function(req, res) {
         res.status(500).json({ msg: 'Server error', error: error.message });
     }
 };
+
+
+
+// Fetch Followers of a User
+exports.getFollowers = async function(req, res) {
+    try {
+        const userId = req.params.id;
+
+        // Find the user relationship document for the given user ID
+        const userRelationship = await UserRelationship.findOne({ userId }).populate('followers', 'name username profileImg');
+
+        if (!userRelationship) {
+            return res.status(404).json({ msg: 'User relationship not found' });
+        }
+
+        // Get the list of followers
+        const followers = userRelationship.followers;
+
+        res.json(followers);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ msg: 'Server error', error: error.message });
+    }
+};

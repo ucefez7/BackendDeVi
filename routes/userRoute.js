@@ -8,6 +8,9 @@ const {
   updateUser,
   deleteUser,
   searchUsersByName,
+  signoutUser,
+  getRelationshipStatus,
+  getUserRelations
 } = require('../controllers/userController');
 const {
   sendFollowRequest,
@@ -16,20 +19,25 @@ const {
   unfollowUser,
   getFollowRequestsReceived,
   getFollowRequestsSent,
+  getFollowers
 } = require('../controllers/networkController');
 const userAuthMiddleware = require('../middlewares/userAuthMiddleware');
 
 const router = express.Router();
 
 // User-related routes
-//router.post('/users', createOrLoginUser);           // POST /api/users
 router.post('/users/login', loginUser);      // POST /api/users/login
 router.post('/users/signup', signupUser);    // POST /api/users/signup
-router.get('/users', getUsers);                     // GET /api/users
-router.get('/users/search', searchUsersByName);     // GET /api/users/search
-router.get('/users/:id', getUserById);              // GET /api/users/:id
-router.put('/users/:id', updateUser);               // PUT /api/users/:id
-router.delete('/users/:id', deleteUser);            // DELETE /api/users/:id
+router.get('/users',userAuthMiddleware, getUsers);                     // GET /api/users
+router.get('/users/search',userAuthMiddleware, searchUsersByName);     // GET /api/users/search
+router.get('/users/:id',userAuthMiddleware, getUserById);              // GET /api/users/:id
+router.post('/signout', userAuthMiddleware, signoutUser);
+router.put('/users/:id',userAuthMiddleware, updateUser);               // PUT /api/users/:id
+router.delete('/users/:id',userAuthMiddleware, deleteUser);            // DELETE /api/users/:id
+
+// Get relationship status between two users
+router.get('/users/relationship/:id', userAuthMiddleware, getRelationshipStatus);
+router.get('/users/relations/:id', userAuthMiddleware, getUserRelations);
 
 // Network-related routes
 // router.post('/users/follow/:id', userAuthMiddleware, sendFollowRequest);         // POST /api/users/follow/:id
@@ -40,6 +48,7 @@ router.post('/users/unfollow/:id', userAuthMiddleware, unfollowUser);           
 
 // Follow requests
 router.post('/users/follow-requests-received', userAuthMiddleware, getFollowRequestsReceived); // POST /api/users/follow-requests-received
-router.post('/users/follow-requests-sent', userAuthMiddleware, getFollowRequestsSent);         // POST /api/users/follow-requests-sent
+router.post('/users/follow-requests-sent', userAuthMiddleware, getFollowRequestsSent);      // POST /api/users/follow-requests-sent
+router.get('/users/followers/:id', userAuthMiddleware,getFollowers);
 
 module.exports = router;
