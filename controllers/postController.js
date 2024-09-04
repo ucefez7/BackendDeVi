@@ -455,7 +455,6 @@ exports.getSavedPosts = async (req, res, next) => {
   
   const userId = req.user.id;
   console.log("ethannn user id: "+userId);
-  
 
   try {
     const savePost = await SavePostModel.findOne({ userId }).populate('posts');

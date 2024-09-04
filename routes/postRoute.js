@@ -20,9 +20,10 @@ router.post('/posts/unlike/:postId', userAuthMiddleware, postController.unlikePo
 // Save/Remove Saved Post routes
 router.post('/posts/save/:postId', userAuthMiddleware, postController.savePost);
 router.delete('/posts/save/:postId', userAuthMiddleware, postController.removeSavedPost);
-router.get('/posts/saved', ()=>{
-    console.log("evde ok ann, data verind");
-});
-// router.get('/posts/saved', userAuthMiddleware, postController.getSavedPosts);
+
+// router.post('/posts/saved', ()=>{
+//     console.log("evde ok ann, data verind");
+// });
+router.get('/posts/saved', postController.getSavedPosts);
 
 module.exports = router;
