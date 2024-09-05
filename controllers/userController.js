@@ -484,6 +484,65 @@ exports.getUserRelations = async function(req, res) {
 };
 
 
+//get notifications
+exports.getUserNotifications = async function(req, res) {
+  try {
+    const userId = req.user.id;
+
+    const userRelationship = await UserRelationship.findOne({ userId });
+
+    if (!userRelationship) {
+      return res.status(404).json({ message: 'User relationships not found' });
+    }
+
+    const followRequestsReceived = await User.find({
+      _id: { $in: userRelationship.followRequestsReceived }
+    }).select('name username profileImg');
+
+    const followers = await User.find({
+      _id: { $in: userRelationship.followers }
+    }).select('name username profileImg');
+
+    const notifications = [];
+
+    followRequestsReceived.forEach(user => {
+      notifications.push({
+        type: 'follow_request_received',
+        userId: user._id,
+        name: user.name,
+        username: user.username,
+        profileImg: user.profileImg,
+        message: `${user.username} has sent you a follow request.`,
+        createdAt: new Date() // Add timestamp
+      });
+    });
+
+    // Notifications for new followers (accepted follow requests)
+    followers.forEach(user => {
+      if (!userRelationship.followRequestsReceived.includes(user._id)) {
+        notifications.push({
+          type: 'follow_request_accepted',
+          userId: user._id,
+          name: user.name,
+          username: user.username,
+          profileImg: user.profileImg,
+          message: `${user.username} has accepted your follow request.`,
+          createdAt: new Date() // Add timestamp
+        });
+      }
+    });
+
+    // Sort notifications by createdAt
+    notifications.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    res.status(200).json({ notifications });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+
 
 
 // // Search users by name

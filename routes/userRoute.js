@@ -10,7 +10,8 @@ const {
   searchUsersByName,
   signoutUser,
   getRelationshipStatus,
-  getUserRelations
+  getUserRelations,
+  getUserNotifications
 } = require('../controllers/userController');
 const {
   sendFollowRequest,
@@ -49,6 +50,7 @@ router.post('/users/unfollow/:id', userAuthMiddleware, unfollowUser);           
 // Follow requests
 router.post('/users/follow-requests-received', userAuthMiddleware, getFollowRequestsReceived); // POST /api/users/follow-requests-received
 router.post('/users/follow-requests-sent', userAuthMiddleware, getFollowRequestsSent);      // POST /api/users/follow-requests-sent
+router.post('/users/get-notifications', userAuthMiddleware, getUserNotifications)
 
 router.get('/users/followers/:id', userAuthMiddleware,getFollowers);
 
