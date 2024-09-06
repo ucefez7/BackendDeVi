@@ -265,18 +265,87 @@ exports.getFollowers = async function(req, res) {
 
 
 
-// Fetch Following Users
+// // Fetch Following Users
+// exports.getFollowing = async function(req, res) {
+//     try {
+//         const userId = req.params.id;
+//         const userRelationship = await UserRelationship.findOne({ userId }).populate('following', 'name username profileImg');
+
+//         if (!userRelationship) {
+//             return res.status(404).json({ msg: 'User relationship not found' });
+//         }
+
+//         const following = userRelationship.following;
+//         res.status(200).json(following);
+//     } catch (error) {
+//         console.error(error);
+//         res.status(500).json({ msg: 'Server error', error: error.message });
+//     }
+// };
+
+
+
 exports.getFollowing = async function(req, res) {
     try {
         const userId = req.params.id;
-        const userRelationship = await UserRelationship.findOne({ userId }).populate('following', 'name username profileImg');
+
+        // Fetch user relationships, including following list
+        const userRelationship = await UserRelationship.findOne({ userId }).populate('following');
 
         if (!userRelationship) {
             return res.status(404).json({ msg: 'User relationship not found' });
         }
 
-        const following = userRelationship.following;
-        res.status(200).json(following);
+        // Fetch the current user's relationships for status determination
+        const currentUserRelationship = await UserRelationship.findOne({ userId: req.user.id });
+
+        // Map over following users and add additional details
+        const followingDetails = await Promise.all(userRelationship.following.map(async (followedUser) => {
+            // Fetch complete user data for each followed user
+            const user = await User.findById(followedUser._id);
+
+            if (!user) return null;
+
+            // Determine the relationship status
+            let relationshipStatus = 'none';
+            if (currentUserRelationship) {
+                if (currentUserRelationship.following.includes(user._id)) {
+                    relationshipStatus = 'following';
+                }
+                if (currentUserRelationship.followers.includes(user._id)) {
+                    relationshipStatus = 'follower';
+                }
+                if (currentUserRelationship.followRequestsSent.includes(user._id)) {
+                    relationshipStatus = 'requested';
+                }
+            }
+
+            // Structure the response data similar to searchUsersByName
+            return {
+                userId: user._id,
+                isUser: user.isUser,
+                isCreator: user.isCreator,
+                isVerified: user.isVerified,
+                name: user.name,
+                username: user.username,
+                gender: user.gender,
+                dob: user.dob,
+                phoneNumber: user.phoneNumber,
+                mailAddress: user.mailAddress,
+                profession: user.profession,
+                bio: user.bio,
+                website: user.website,
+                profileImg: user.profileImg,
+                relationshipStatus,
+                createdAt: user.createdAt,
+                updatedAt: user.updatedAt
+            };
+        }));
+
+        // Filter out any null entries
+        const filteredFollowingDetails = followingDetails.filter(detail => detail !== null);
+
+        res.status(200).json(filteredFollowingDetails);
     } catch (error) {
         console.error(error);
         res.status(500).json({ msg: 'Server error', error: error.message });
@@ -284,44 +353,8 @@ exports.getFollowing = async function(req, res) {
 };
 
 
-// // Cancel Follow Request
-// exports.cancelFollowRequest = async function(req, res) {
-//     try {
-//         const user = await User.findById(req.user.id);
-//         const targetUser = await User.findById(req.params.id);
 
-//         if (!user) return res.status(404).json({ message: 'User not found' });
-//         if (!targetUser) return res.status(404).json({ msg: 'Target User not found' });
 
-//         let userRelationship = await UserRelationship.findOne({ userId: user._id });
-//         if (!userRelationship) {
-//             return res.status(404).json({ msg: 'User relationship not found' });
-//         }
-
-//         let targetUserRelationship = await UserRelationship.findOne({ userId: targetUser._id });
-//         if (!targetUserRelationship) {
-//             return res.status(404).json({ msg: 'Target user relationship not found' });
-//         }
-
-//         // Remove the target user from the followRequestsSent of the logged-in user
-//         userRelationship.followRequestsSent = userRelationship.followRequestsSent.filter(
-//             id => id.toString() !== targetUser._id.toString()
-//         );
-
-//         // Remove the logged-in user from the followRequestsReceived of the target user
-//         targetUserRelationship.followRequestsReceived = targetUserRelationship.followRequestsReceived.filter(
-//             id => id.toString() !== user._id.toString()
-//         );
-
-//         await userRelationship.save();
-//         await targetUserRelationship.save();
-
-//         res.status(200).json({ msg: 'Follow request canceled successfully' });
-//     } catch (error) {
-//         console.error('Error details:', error);
-//         res.status(500).json({ msg: 'Server error', error: error.message });
-//     }
-// };
 
 
 // Cancel Follow Request
