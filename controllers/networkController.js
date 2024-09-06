@@ -262,3 +262,113 @@ exports.getFollowers = async function(req, res) {
         res.status(500).json({ msg: 'Server error', error: error.message });
     }
 };
+
+
+
+// Fetch Following Users
+exports.getFollowing = async function(req, res) {
+    try {
+        const userId = req.params.id;
+        const userRelationship = await UserRelationship.findOne({ userId }).populate('following', 'name username profileImg');
+
+        if (!userRelationship) {
+            return res.status(404).json({ msg: 'User relationship not found' });
+        }
+
+        const following = userRelationship.following;
+        res.status(200).json(following);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ msg: 'Server error', error: error.message });
+    }
+};
+
+
+// // Cancel Follow Request
+// exports.cancelFollowRequest = async function(req, res) {
+//     try {
+//         const user = await User.findById(req.user.id);
+//         const targetUser = await User.findById(req.params.id);
+
+//         if (!user) return res.status(404).json({ message: 'User not found' });
+//         if (!targetUser) return res.status(404).json({ msg: 'Target User not found' });
+
+//         let userRelationship = await UserRelationship.findOne({ userId: user._id });
+//         if (!userRelationship) {
+//             return res.status(404).json({ msg: 'User relationship not found' });
+//         }
+
+//         let targetUserRelationship = await UserRelationship.findOne({ userId: targetUser._id });
+//         if (!targetUserRelationship) {
+//             return res.status(404).json({ msg: 'Target user relationship not found' });
+//         }
+
+//         // Remove the target user from the followRequestsSent of the logged-in user
+//         userRelationship.followRequestsSent = userRelationship.followRequestsSent.filter(
+//             id => id.toString() !== targetUser._id.toString()
+//         );
+
+//         // Remove the logged-in user from the followRequestsReceived of the target user
+//         targetUserRelationship.followRequestsReceived = targetUserRelationship.followRequestsReceived.filter(
+//             id => id.toString() !== user._id.toString()
+//         );
+
+//         await userRelationship.save();
+//         await targetUserRelationship.save();
+
+//         res.status(200).json({ msg: 'Follow request canceled successfully' });
+//     } catch (error) {
+//         console.error('Error details:', error);
+//         res.status(500).json({ msg: 'Server error', error: error.message });
+//     }
+// };
+
+
+// Cancel Follow Request
+exports.cancelFollowRequest = async function(req, res) {
+    try {
+        const user = await User.findById(req.user.id);
+        const targetUser = await User.findById(req.params.id);
+
+        if (!user) return res.status(404).json({ message: 'User not found' });
+        if (!targetUser) return res.status(404).json({ msg: 'Target user not found' });
+
+        let userRelationship = await UserRelationship.findOne({ userId: user._id });
+        if (!userRelationship) {
+            return res.status(404).json({ msg: 'User relationship not found' });
+        }
+
+        let targetUserRelationship = await UserRelationship.findOne({ userId: targetUser._id });
+        if (!targetUserRelationship) {
+            return res.status(404).json({ msg: 'Target user relationship not found' });
+        }
+
+        // Check if the target user is in the followRequestsSent of the logged-in user
+        const isRequestSent = userRelationship.followRequestsSent.includes(targetUser._id.toString());
+        const isRequestReceived = targetUserRelationship.followRequestsReceived.includes(user._id.toString());
+
+        if (!isRequestSent || !isRequestReceived) {
+            return res.status(400).json({ msg: 'No follow request found to cancel' });
+        }
+
+        // Remove the target user from the followRequestsSent of the logged-in user
+        userRelationship.followRequestsSent = userRelationship.followRequestsSent.filter(
+            id => id.toString() !== targetUser._id.toString()
+        );
+
+        // Remove the logged-in user from the followRequestsReceived of the target user
+        targetUserRelationship.followRequestsReceived = targetUserRelationship.followRequestsReceived.filter(
+            id => id.toString() !== user._id.toString()
+        );
+
+        await userRelationship.save();
+        await targetUserRelationship.save();
+
+        res.status(200).json({ msg: 'Follow request canceled successfully' });
+    } catch (error) {
+        console.error('Error details:', error);
+        res.status(500).json({ msg: 'Server error', error: error.message });
+    }
+};
+
+

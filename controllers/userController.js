@@ -50,38 +50,6 @@ exports.getUsers = async function (req, res) {
   }
 };
 
-// // Get user by ID
-// exports.getUserById = async function (req, res) {
-//   try {
-//     const user = await User.findById(req.params.id);
-//     console.log("User: ", user);
-
-//     if (!user) return res.status(404).json({ message: 'User not found' });
-
-//     const userResponse = {
-//       userId: user._id,
-//       isUser: user.isUser,
-//       isCreator: user.isCreator,
-//       isVerified: user.isVerified,
-//       name: user.name,
-//       username: user.username,
-//       gender: user.gender,
-//       dob: user.dob,
-//       phoneNumber: user.phoneNumber,
-//       mailAddress: user.mailAddress,
-//       profession: user.profession,
-//       bio: user.bio,
-//       website: user.website,
-//       profileImg: user.profileImg,
-//       createdAt: user.createdAt,
-//       updatedAt: user.updatedAt
-//     };
-
-//     res.json(userResponse);
-//   } catch (err) {
-//     res.status(500).json({ message: err.message });
-//   }
-// };
 
 
 // Get user profile by ID including followers and following
@@ -389,30 +357,6 @@ exports.deleteUser = async function (req, res) {
 };
 
 
-// // Get relationship between two users
-// exports.getRelationshipStatus = async function(req, res) {
-//   try {
-//     const userId = req.user.id;
-//     const targetUserId = req.params.id;
-
-//     const userRelationship = await UserRelationship.findOne({ userId });
-//     const targetUserRelationship = await UserRelationship.findOne({ userId: targetUserId });
-
-//     if (!userRelationship || !targetUserRelationship) {
-//       return res.status(404).json({ message: 'Relationship data not found' });
-//     }
-
-//     const isFollowing = userRelationship.following.includes(targetUserId);
-//     const isFollowedBy = targetUserRelationship.followers.includes(userId);
-
-//     res.status(200).json({ isFollowing, isFollowedBy });
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).json({ message: 'Server error' });
-//   }
-// };
-
-
 // Get Relationship Status
 exports.getRelationshipStatus = async function(req, res) {
   try {
@@ -484,24 +428,38 @@ exports.getUserRelations = async function(req, res) {
 };
 
 
-//get notifications
+
 exports.getUserNotifications = async function(req, res) {
   try {
     const userId = req.user.id;
+    
+    console.log(`Fetching notifications for userId: ${userId}`);
 
     const userRelationship = await UserRelationship.findOne({ userId });
+    
+    // Log user relationship details
+    console.log('UserRelationship:', userRelationship);
 
     if (!userRelationship) {
       return res.status(404).json({ message: 'User relationships not found' });
     }
 
+    // Check contents of followRequestsReceived
+    console.log('Follow Requests Received:', userRelationship.followRequestsReceived);
+
     const followRequestsReceived = await User.find({
       _id: { $in: userRelationship.followRequestsReceived }
     }).select('name username profileImg');
 
+    // Log the result of the follow requests received query
+    console.log('Follow Requests Received Users:', followRequestsReceived);
+
     const followers = await User.find({
       _id: { $in: userRelationship.followers }
     }).select('name username profileImg');
+
+    // Log the result of the followers query
+    console.log('Followers:', followers);
 
     const notifications = [];
 
@@ -519,7 +477,7 @@ exports.getUserNotifications = async function(req, res) {
 
     // Notifications for new followers (accepted follow requests)
     followers.forEach(user => {
-      if (!userRelationship.followRequestsReceived.includes(user._id)) {
+      if (!userRelationship.followRequestsReceived.includes(user._id.toString())) {
         notifications.push({
           type: 'follow_request_accepted',
           userId: user._id,
@@ -535,93 +493,13 @@ exports.getUserNotifications = async function(req, res) {
     // Sort notifications by createdAt
     notifications.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
+    // Log final notifications array
+    console.log('Notifications:', notifications);
+
     res.status(200).json({ notifications });
   } catch (error) {
-    console.error(error);
+    console.error('Error fetching notifications:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
-
-
-
-
-// // Search users by name
-// exports.searchUsersByName = async function (req, res) {
-//   const searchTerm = req.query.name;
-
-//   if (!searchTerm) {
-//     return res.status(400).json({ message: 'Name query parameter is required' });
-//   }
-
-//   try {
-//     const users = await User.find({
-//       $or: [
-//         { name: { $regex: searchTerm, $options: 'i' } },
-//         { username: { $regex: searchTerm, $options: 'i' } }
-//       ]
-//     });
-
-//     if (users.length === 0) {
-//       return res.status(404).json({ message: 'No users found' });
-//     }
-
-//      const userResponses = users.map(user => ({
-//       userId: user._id,
-//       isUser: user.isUser,
-//       isCreator: user.isCreator,
-//       isVerified: user.isVerified,
-//       name: user.name,
-//       username: user.username,
-//       gender: user.gender,
-//       dob: user.dob,
-//       phoneNumber: user.phoneNumber,
-//       mailAddress: user.mailAddress,
-//       profession: user.profession,
-//       bio: user.bio,
-//       website: user.website,
-//       profileImg: user.profileImg,
-//       createdAt: user.createdAt,
-//       updatedAt: user.updatedAt
-//     }));
-
-//     res.json(userResponses);
-//   } catch (err) {
-//     res.status(500).json({ message: err.message });
-//   }
-// };
-
-
-
-// Search users by name
-// exports.searchUsersByName = async function (req, res) {
-//   const searchTerm = req.query.name;
-
-//   if (!searchTerm) {
-//     return res.status(400).json({ message: 'Name query parameter is required' });
-//   }
-
-//   try {
-//     if (!trie) {
-//       trie = await populateTrie();
-//     }
-
-//     const suggestedUsernames = trie.search(searchTerm);
-
-//     if (suggestedUsernames.length === 0) {
-//       return res.status(404).json({ message: 'No users found' });
-//     }
-
-//     const users = await User.find({
-//       username: { $in: suggestedUsernames }
-//     });
-
-//     if (users.length === 0) {
-//       return res.status(404).json({ message: 'No users found' });
-//     }
-
-//     res.json(users);
-//   } catch (err) {
-//     res.status(500).json({ message: err.message });
-//   }
-// };
 

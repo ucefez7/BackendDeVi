@@ -20,7 +20,9 @@ const {
   unfollowUser,
   getFollowRequestsReceived,
   getFollowRequestsSent,
-  getFollowers
+  getFollowers,
+  getFollowing,
+  cancelFollowRequest
 } = require('../controllers/networkController');
 const userAuthMiddleware = require('../middlewares/userAuthMiddleware');
 
@@ -53,5 +55,7 @@ router.post('/users/follow-requests-sent', userAuthMiddleware, getFollowRequests
 router.post('/users/get-notifications', userAuthMiddleware, getUserNotifications)
 
 router.get('/users/followers/:id', userAuthMiddleware,getFollowers);
+router.get('/users/following/:id', userAuthMiddleware, getFollowing);
+router.post('/users/cancel-follow/:id', userAuthMiddleware, cancelFollowRequest);
 
 module.exports = router;
