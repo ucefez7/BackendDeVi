@@ -122,14 +122,17 @@ exports.searchUsersByName = async function (req, res) {
       ]
     });
 
-    if (users.length === 0) {
+    // Filter out the authenticated user from the search results
+    const filteredUsers = users.filter(user => user._id.toString() !== req.user.id);
+
+    if (filteredUsers.length === 0) {
       return res.status(404).json({ message: 'No users found' });
     }
 
     // Fetch the current user's relationships
     const currentUserRelationship = await UserRelationship.findOne({ userId: req.user.id });
 
-    const userResponses = users.map(user => {
+    const userResponses = filteredUsers.map(user => {
       // Determine relationship status
       let relationshipStatus = 'none';
       if (currentUserRelationship) {
@@ -170,6 +173,7 @@ exports.searchUsersByName = async function (req, res) {
     res.status(500).json({ message: err.message });
   }
 };
+
 
 
 
