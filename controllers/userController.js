@@ -114,15 +114,24 @@ exports.searchUsersByName = async function (req, res) {
     return res.status(400).json({ message: 'Name query parameter is required' });
   }
 
-  try {
+  // try {
+  //   const users = await User.find({
+  //     $or: [
+  //       { name: { $regex: searchTerm, $options: 'i' } },
+  //       { username: { $regex: searchTerm, $options: 'i' } }
+  //     ]
+  //   });
+
+
+  try{
     const users = await User.find({
       $or: [
-        { name: { $regex: searchTerm, $options: 'i' } },
-        { username: { $regex: searchTerm, $options: 'i' } }
+        { name: { $regex: `^${searchTerm}`, $options: 'i' } }, 
+        { username: { $regex: `^${searchTerm}`, $options: 'i' } } 
       ]
     });
 
-    // Filter out the authenticated user from the search results
+    
     const filteredUsers = users.filter(user => user._id.toString() !== req.user.id);
 
     if (filteredUsers.length === 0) {
@@ -448,21 +457,18 @@ exports.getUserNotifications = async function(req, res) {
       return res.status(404).json({ message: 'User relationships not found' });
     }
 
-    // Check contents of followRequestsReceived
     console.log('Follow Requests Received:', userRelationship.followRequestsReceived);
 
     const followRequestsReceived = await User.find({
       _id: { $in: userRelationship.followRequestsReceived }
     }).select('name username profileImg');
 
-    // Log the result of the follow requests received query
     console.log('Follow Requests Received Users:', followRequestsReceived);
 
     const followers = await User.find({
       _id: { $in: userRelationship.followers }
     }).select('name username profileImg');
 
-    // Log the result of the followers query
     console.log('Followers:', followers);
 
     const notifications = [];
@@ -479,7 +485,6 @@ exports.getUserNotifications = async function(req, res) {
       });
     });
 
-    // Notifications for new followers (accepted follow requests)
     followers.forEach(user => {
       if (!userRelationship.followRequestsReceived.includes(user._id.toString())) {
         notifications.push({

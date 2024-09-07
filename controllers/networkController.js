@@ -2,6 +2,7 @@ const User = require('../models/User');
 const UserRelationship = require('../models/userRelationship');
 
 
+
 // Send Follow Request
 exports.sendFollowRequest = async function(req, res) {
     try {
@@ -17,12 +18,27 @@ exports.sendFollowRequest = async function(req, res) {
             return res.status(404).json({ msg: 'Target User not found' });
         }
 
+        // Check if the target user is the same as the current user
+        if (user._id.equals(targetUser._id)) {
+            return res.status(400).json({ msg: 'Cannot send follow request to yourself' });
+        }
+
         console.log('Target User Data:', targetUser);
 
         let userRelationship = await UserRelationship.findOne({ userId: user._id });
         if (!userRelationship) {
             userRelationship = new UserRelationship({ userId: user._id });
         }
+
+        let targetUserRelationship = await UserRelationship.findOne({ userId: targetUser._id });
+        if (!targetUserRelationship) {
+            targetUserRelationship = new UserRelationship({ userId: targetUser._id });
+        }
+
+        if (targetUserRelationship.followRequestsSent.includes(user._id)) {
+            return res.status(400).json({ msg: 'Target user has already sent you a follow request' });
+        }
+
         if (targetUser.isCreator) {
             if (!userRelationship.following.includes(targetUser._id)) {
                 userRelationship.following.push(targetUser._id);
@@ -33,10 +49,6 @@ exports.sendFollowRequest = async function(req, res) {
                 userRelationship.followRequestsSent.push(targetUser._id);
                 await userRelationship.save();
 
-                let targetUserRelationship = await UserRelationship.findOne({ userId: targetUser._id });
-                if (!targetUserRelationship) {
-                    targetUserRelationship = new UserRelationship({ userId: targetUser._id });
-                }
                 targetUserRelationship.followRequestsReceived.push(user._id);
                 await targetUserRelationship.save();
             }
@@ -48,8 +60,6 @@ exports.sendFollowRequest = async function(req, res) {
         res.status(500).json({ msg: 'Server error', error: error.message });
     }
 };
-
-
 
 
 
@@ -148,12 +158,10 @@ exports.unfollowUser = async function(req, res) {
             return res.status(404).json({ msg: 'Relationship data not found' });
         }
 
-        // Remove the target user from the following list of the authenticated user
         if (userRelationship.following.includes(targetUser._id)) {
             userRelationship.following.pull(targetUser._id);
         }
 
-        // Remove the authenticated user from the followers list of the target user
         if (targetUserRelationship.followers.includes(user._id)) {
             targetUserRelationship.followers.pull(user._id);
         }
@@ -246,7 +254,6 @@ exports.getFollowers = async function(req, res) {
     try {
         const userId = req.params.id;
 
-        // Find the user relationship document for the given user ID
         const userRelationship = await UserRelationship.findOne({ userId }).populate('followers', 'name username profileImg');
 
         if (!userRelationship) {
@@ -265,48 +272,22 @@ exports.getFollowers = async function(req, res) {
 
 
 
-// // Fetch Following Users
-// exports.getFollowing = async function(req, res) {
-//     try {
-//         const userId = req.params.id;
-//         const userRelationship = await UserRelationship.findOne({ userId }).populate('following', 'name username profileImg');
-
-//         if (!userRelationship) {
-//             return res.status(404).json({ msg: 'User relationship not found' });
-//         }
-
-//         const following = userRelationship.following;
-//         res.status(200).json(following);
-//     } catch (error) {
-//         console.error(error);
-//         res.status(500).json({ msg: 'Server error', error: error.message });
-//     }
-// };
-
-
-
 exports.getFollowing = async function(req, res) {
     try {
         const userId = req.params.id;
-
-        // Fetch user relationships, including following list
         const userRelationship = await UserRelationship.findOne({ userId }).populate('following');
 
         if (!userRelationship) {
             return res.status(404).json({ msg: 'User relationship not found' });
         }
 
-        // Fetch the current user's relationships for status determination
         const currentUserRelationship = await UserRelationship.findOne({ userId: req.user.id });
 
-        // Map over following users and add additional details
         const followingDetails = await Promise.all(userRelationship.following.map(async (followedUser) => {
-            // Fetch complete user data for each followed user
             const user = await User.findById(followedUser._id);
 
             if (!user) return null;
 
-            // Determine the relationship status
             let relationshipStatus = 'none';
             if (currentUserRelationship) {
                 if (currentUserRelationship.following.includes(user._id)) {
@@ -320,7 +301,6 @@ exports.getFollowing = async function(req, res) {
                 }
             }
 
-            // Structure the response data similar to searchUsersByName
             return {
                 userId: user._id,
                 isUser: user.isUser,
@@ -342,7 +322,6 @@ exports.getFollowing = async function(req, res) {
             };
         }));
 
-        // Filter out any null entries
         const filteredFollowingDetails = followingDetails.filter(detail => detail !== null);
 
         res.status(200).json(filteredFollowingDetails);
@@ -351,10 +330,6 @@ exports.getFollowing = async function(req, res) {
         res.status(500).json({ msg: 'Server error', error: error.message });
     }
 };
-
-
-
-
 
 
 // Cancel Follow Request
@@ -383,13 +358,11 @@ exports.cancelFollowRequest = async function(req, res) {
         if (!isRequestSent || !isRequestReceived) {
             return res.status(400).json({ msg: 'No follow request found to cancel' });
         }
-
-        // Remove the target user from the followRequestsSent of the logged-in user
+   
         userRelationship.followRequestsSent = userRelationship.followRequestsSent.filter(
             id => id.toString() !== targetUser._id.toString()
         );
-
-        // Remove the logged-in user from the followRequestsReceived of the target user
+ 
         targetUserRelationship.followRequestsReceived = targetUserRelationship.followRequestsReceived.filter(
             id => id.toString() !== user._id.toString()
         );
