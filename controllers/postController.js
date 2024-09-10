@@ -419,3 +419,89 @@ exports.getSavedPosts = async (req, res, next) => {
     next(error);
   }
 };
+
+
+
+
+
+
+//Get all posts by an user
+exports.getPostsByUser = async (req, res, next) => {
+  const { userId } = req.params;
+
+  try {
+    
+    const posts = await PostModel.find({ userId, isBlocked: false })
+      .populate({
+        path: 'userId',
+        select: 'username name',
+      })
+      .populate({
+        path: 'comments',
+        populate: { path: 'userId', select: 'username' },
+      })
+      .sort({ createdAt: -1 });
+
+    if (!posts.length) {
+      return res.status(404).json({ message: 'No posts found for this user' });
+    }
+
+    const postsWithUserDetails = posts.map(post => {
+      const user = post.userId;
+      return {
+        ...post.toObject(),
+        userId: {
+          ...user.toObject(),
+          followingCount: user.following ? user.following.length : 0,
+          followersCount: user.followers ? user.followers.length : 0,
+        },
+      };
+    });
+    res.status(200).json(postsWithUserDetails);
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+
+
+// Get all posts by category
+exports.getPostsByCategory = async (req, res, next) => {
+  const { category } = req.params;
+
+  try {
+    if (!category) {
+      throw createHttpError(400, 'Category parameter is missing');
+    }
+    const posts = await PostModel.find({ category, isBlocked: false })
+      .populate({
+        path: 'userId',
+        select: 'username name',
+      })
+      .populate({
+        path: 'comments',
+        populate: { path: 'userId', select: 'username' },
+      })
+      .sort({ createdAt: -1 });
+
+    if (!posts.length) {
+      return res.status(404).json({ message: 'No posts found in this category' });
+    }
+
+    const postsWithUserDetails = posts.map(post => {
+      const user = post.userId;
+      return {
+        ...post.toObject(),
+        userId: {
+          ...user.toObject(),
+          followingCount: user.following ? user.following.length : 0,
+          followersCount: user.followers ? user.followers.length : 0,
+        },
+      };
+    });
+    res.status(200).json(postsWithUserDetails);
+  } catch (error) {
+    next(error);
+  }
+};

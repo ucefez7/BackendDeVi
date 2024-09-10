@@ -9,6 +9,8 @@ router.get('/posts/all', postController.getAllPosts);
 router.get('/posts/:postId', postController.getPostById);
 router.put('/posts/:postId', userAuthMiddleware, postController.updatePost);
 router.delete('/posts/:postId', userAuthMiddleware, postController.deletePost);
+router.get('/posts/user/:userId',userAuthMiddleware, postController.getPostsByUser);
+router.get('/posts/category/:category',userAuthMiddleware, postController.getPostsByCategory);
 
 // Comment and like/unlike routes
 router.post('/posts/comment', userAuthMiddleware, postController.addComment);

@@ -15,14 +15,14 @@ const postSchema = new Schema({
     type: String
   },
   media: {
-    type: [String], // Array of strings for media URLs
+    type: [String], 
     validate: {
       validator: function(arr) {
-        return arr.length > 0; // Ensure media array is not empty
+        return arr.length > 0;
       },
       message: 'At least one media file is required'
     },
-    required: [true, 'Media is required'] // Ensure media field is present
+    required: [true, 'Media is required'] 
   },
   location: {
     type: String
