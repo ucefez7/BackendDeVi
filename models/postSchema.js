@@ -5,7 +5,7 @@ const postSchema = new Schema({
   userId: { type: mongoose.Types.ObjectId, ref: 'User', required: true },
   title: { type: String, required: true },
   description: { type: String },
-  media: [{ type: String }],
+  media: [{ type: String, required:true }],
   location: { type: String },
   category: [{ type: String, required: true }],
   subCategory: [{ type: String, required: true }],
