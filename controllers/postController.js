@@ -8,21 +8,9 @@ const cloudinary = require('../config/cloudinaryConfig');
 const createHttpError = require('http-errors');
 
 
-// const postStorage = new CloudinaryStorage({
-//   cloudinary: cloudinary,
-//   params: {
-//     folder: 'post_images',
-//     allowed_formats: ['jpg', 'jpeg', 'png'],
-//   },
-// });
-
-// const uploadPostImg = multer({ storage: postStorage });
-
-
 const postStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: async (req, file) => {
-    // Define a folder for images and videos separately
     let folder = 'post_images';
     if (file.mimetype.startsWith('video')) {
       folder = 'post_videos';
@@ -31,7 +19,7 @@ const postStorage = new CloudinaryStorage({
     return {
       folder: folder,
       resource_type: file.mimetype.startsWith('video') ? 'video' : 'image',
-      allowed_formats: ['jpg', 'jpeg', 'png', 'mp4', 'mov'], // Add allowed video formats
+      allowed_formats: ['jpg', 'jpeg', 'png', 'mp4', 'mov'],
     };
   },
 });
@@ -39,51 +27,12 @@ const postStorage = new CloudinaryStorage({
 const uploadPostMedia = multer({ storage: postStorage });
 
 
-
-
-// // Create a new post with multiple images upload
-// exports.createPost = [
-//   uploadPostImg.array('media', 5),
-//   async (req, res, next) => {
-//     const userId = req.user.id;
-//     const { title, description, location, category, subCategory } = req.body;
-//     const mediaURLs = req.files ? req.files.map(file => file.path) : [];
-
-//     try {
-//       if (!title || !category || !subCategory) {
-//         throw createHttpError(400, 'Parameters Missing');
-//       }
-
-//       const newPost = await PostModel.create({
-//         userId,
-//         title,
-//         description,
-//         media: mediaURLs,
-//         location,
-//         category: Array.isArray(category) ? category : [category],
-//         subCategory: Array.isArray(subCategory) ? subCategory : [subCategory],
-//         likes: [],
-//         comments: [],
-//         shared: [],
-//         isBlocked: false,
-//         sensitive: false,
-//       });
-
-//       res.status(201).json({ newPost });
-//     } catch (error) {
-//       next(error);
-//     }
-//   },
-// ];
-
-
-
 // Create a new post with multiple media (images and videos) upload
 exports.createPost = [
-  uploadPostMedia.array('media', 5), // Updated to use uploadPostMedia
+  uploadPostMedia.array('media', 5), 
   async (req, res, next) => {
     const userId = req.user.id;
-    const { title, description, location, category, subCategory } = req.body;
+    const { title, description, location, category, subCategory, isDiary } = req.body;
     const mediaURLs = req.files ? req.files.map(file => file.path) : [];
 
     try {
@@ -104,6 +53,7 @@ exports.createPost = [
         shared: [],
         isBlocked: false,
         sensitive: false,
+        isDiary,
       });
 
       res.status(201).json({ newPost });
@@ -194,43 +144,6 @@ exports.getPostById = async (req, res, next) => {
 };
 
 
-
-
-// // Update a post with multiple images upload
-// exports.updatePost = [
-//   uploadPostImg.array('media', 5),
-//   async (req, res, next) => {
-//     const userId = req.user.id;
-//     const { postId } = req.params;
-//     const { title, description, location, category, subCategory } = req.body;
-//     const mediaURLs = req.files ? req.files.map(file => file.path) : null;
-
-//     try {
-//       const post = await PostModel.findOne({ _id: postId });
-
-//       if (!post) {
-//         throw createHttpError(404, 'Post not found');
-//       }
-
-//       if (post.userId.toString() !== userId) {
-//         throw createHttpError(401, "This post doesn't belong to this user");
-//       }
-//       const updatedPost = await PostModel.findByIdAndUpdate(postId, {
-//         title,
-//         description,
-//         media: mediaURLs ? [...post.media, ...mediaURLs] : post.media,
-//         location,
-//         category: Array.isArray(category) ? category : [category],
-//         subCategory: Array.isArray(subCategory) ? subCategory : [subCategory],
-//       }, { new: true });
-
-//       res.status(200).json(updatedPost);
-//     } catch (error) {
-//       next(error);
-//     }
-//   },
-// ];
-
 // Update a post with multiple media (images and videos) upload
 exports.updatePost = [
   uploadPostMedia.array('media', 5), // Updated to use uploadPostMedia
@@ -273,7 +186,6 @@ exports.updatePost = [
 
 
 
-
 // Delete a post
 exports.deletePost = async (req, res, next) => {
   const userId = req.user.id;
@@ -297,8 +209,6 @@ exports.deletePost = async (req, res, next) => {
     next(error);
   }
 };
-
-
 
 
 
