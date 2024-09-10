@@ -32,7 +32,7 @@ exports.createPost = [
   uploadPostMedia.array('media', 5), 
   async (req, res, next) => {
     const userId = req.user.id;
-    const { title, description, location, category, subCategory, isDiary } = req.body;
+    const { title, description, location, category, subCategory, isBlog } = req.body;
     const mediaURLs = req.files ? req.files.map(file => file.path) : [];
 
     try {
@@ -53,7 +53,7 @@ exports.createPost = [
         shared: [],
         isBlocked: false,
         sensitive: false,
-        isDiary,
+        isBlog,
       });
 
       res.status(201).json({ newPost });
