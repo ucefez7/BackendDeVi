@@ -7,7 +7,7 @@ const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const cloudinary = require('../config/cloudinaryConfig');
 const createHttpError = require('http-errors');
 
-// Setting up Cloudinary storage for posts
+
 const postStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
@@ -21,13 +21,49 @@ const uploadPostImg = multer({ storage: postStorage });
 
 
 
-// Create a new post with image upload
+
+// // Create a new post with image upload
+// exports.createPost = [
+//   uploadPostImg.single('media'),
+//   async (req, res, next) => {
+//     const userId = req.user.id;
+//     const { title, description, location, category, subCategory } = req.body;
+//     const mediaURL = req.file ? req.file.path : null;
+
+//     try {
+//       if (!title || !category || !subCategory) {
+//         throw createHttpError(400, 'Parameters Missing');
+//       }
+
+//       const newPost = await PostModel.create({
+//         userId,
+//         title,
+//         description,
+//         media: mediaURL,
+//         location,
+//         category,
+//         subCategory,
+//         likes: [],
+//         comments: [],
+//         shared: [],
+//         isBlocked: false,
+//         sensitive: false,
+//       });
+
+//       res.status(201).json({ newPost });
+//     } catch (error) {
+//       next(error);
+//     }
+//   },
+// ];
+
+// Create a new post with multiple images upload
 exports.createPost = [
-  uploadPostImg.single('media'),
+  uploadPostImg.array('media', 5),
   async (req, res, next) => {
     const userId = req.user.id;
     const { title, description, location, category, subCategory } = req.body;
-    const mediaURL = req.file ? req.file.path : null;
+    const mediaURLs = req.files ? req.files.map(file => file.path) : [];
 
     try {
       if (!title || !category || !subCategory) {
@@ -38,10 +74,10 @@ exports.createPost = [
         userId,
         title,
         description,
-        media: mediaURL,
+        media: mediaURLs,
         location,
-        category,
-        subCategory,
+        category: Array.isArray(category) ? category : [category],
+        subCategory: Array.isArray(subCategory) ? subCategory : [subCategory],
         likes: [],
         comments: [],
         shared: [],
@@ -55,6 +91,7 @@ exports.createPost = [
     }
   },
 ];
+
 
 
 
@@ -138,39 +175,76 @@ exports.getPostById = async (req, res, next) => {
 
 
 
-// Update a post
-exports.updatePost = async (req, res, next) => {
-  const userId = req.user.id;
-  const { postId } = req.params;
-  const { title, description, location, category, subCategory } = req.body;
-  const mediaURL = req.file ? req.file.path : null;
+// // Update a post
+// exports.updatePost = async (req, res, next) => {
+//   const userId = req.user.id;
+//   const { postId } = req.params;
+//   const { title, description, location, category, subCategory } = req.body;
+//   const mediaURL = req.file ? req.file.path : null;
 
-  try {
-    const post = await PostModel.findOne({ _id: postId });
+//   try {
+//     const post = await PostModel.findOne({ _id: postId });
 
-    if (!post) {
-      throw createHttpError(404, 'Post not found');
+//     if (!post) {
+//       throw createHttpError(404, 'Post not found');
+//     }
+
+//     if (post.userId.toString() !== userId) {
+//       throw createHttpError(401, "This post doesn't belong to this user");
+//     }
+
+//     const updatedPost = await PostModel.findByIdAndUpdate(postId, {
+//       title,
+//       description,
+//       media: mediaURL || post.media,
+//       location,
+//       category,
+//       subCategory,
+//     }, { new: true });
+
+//     res.status(200).json(updatedPost);
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+
+
+
+// Update a post with multiple images upload
+exports.updatePost = [
+  uploadPostImg.array('media', 5),
+  async (req, res, next) => {
+    const userId = req.user.id;
+    const { postId } = req.params;
+    const { title, description, location, category, subCategory } = req.body;
+    const mediaURLs = req.files ? req.files.map(file => file.path) : null;
+
+    try {
+      const post = await PostModel.findOne({ _id: postId });
+
+      if (!post) {
+        throw createHttpError(404, 'Post not found');
+      }
+
+      if (post.userId.toString() !== userId) {
+        throw createHttpError(401, "This post doesn't belong to this user");
+      }
+
+      const updatedPost = await PostModel.findByIdAndUpdate(postId, {
+        title,
+        description,
+        media: mediaURLs ? [...post.media, ...mediaURLs] : post.media,
+        location,
+        category: Array.isArray(category) ? category : [category],
+        subCategory: Array.isArray(subCategory) ? subCategory : [subCategory],
+      }, { new: true });
+
+      res.status(200).json(updatedPost);
+    } catch (error) {
+      next(error);
     }
-
-    if (post.userId.toString() !== userId) {
-      throw createHttpError(401, "This post doesn't belong to this user");
-    }
-
-    const updatedPost = await PostModel.findByIdAndUpdate(postId, {
-      title,
-      description,
-      media: mediaURL || post.media,
-      location,
-      category,
-      subCategory,
-    }, { new: true });
-
-    res.status(200).json(updatedPost);
-  } catch (error) {
-    next(error);
-  }
-};
-
+  },
+];
 
 
 
@@ -374,27 +448,10 @@ exports.removeSavedPost = async (req, res, next) => {
   }
 };
 
-// // Get Saved Posts
-// exports.getSavedPosts = async (req, res, next) => {
-//   const userId = req.user.id;
-
-//   try {
-//     const savePost = await SavePostModel.findOne({ userId }).populate('posts');
-
-//     if (!savePost) {
-//       return res.status(404).json({ message: 'No saved posts found for this user' });
-//     }
-
-//     res.status(200).json({ status: 'success', data: savePost.posts });
-//   } catch (error) {
-//     next(error);
-//   }
-// };
-
 
 
 // Get Saved Posts
-exports.getSavedPosts = async (req, res, next) => {
+exports.getSavedPost = async (req, res, next) => {
   const userId = req.user.id;
   const { postId } = req.params;
 
@@ -405,6 +462,22 @@ exports.getSavedPosts = async (req, res, next) => {
       return res.status(404).json({ message: 'No saved posts found for this user' });
     }
 
+    res.status(200).json({ status: 'success', data: savePost.posts });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+
+// Get Saved Posts
+exports.getSavedPosts = async (req, res, next) => {
+  const userId = req.user.id;
+  try {
+    const savePost = await SavePostModel.findOne({ userId }).populate('posts');
+    if (!savePost || savePost.posts.length === 0) {
+      throw createHttpError(404, 'No saved posts found for this user');
+    }
     res.status(200).json({ status: 'success', data: savePost.posts });
   } catch (error) {
     next(error);

@@ -373,7 +373,6 @@ exports.deleteUser = async function (req, res) {
 // Get Relationship Status
 exports.getRelationshipStatus = async function(req, res) {
   try {
-      // Fetch the current user and the target user
       const user = await User.findById(req.user.id);
       const targetUser = await User.findById(req.params.id);
 
@@ -442,38 +441,35 @@ exports.getUserRelations = async function(req, res) {
 
 
 
-exports.getUserNotifications = async function(req, res) {
+
+exports.getUserNotifications = async function (req, res) {
   try {
     const userId = req.user.id;
-    
     console.log(`Fetching notifications for userId: ${userId}`);
 
     const userRelationship = await UserRelationship.findOne({ userId });
-    
-    // Log user relationship details
+
     console.log('UserRelationship:', userRelationship);
 
     if (!userRelationship) {
       return res.status(404).json({ message: 'User relationships not found' });
     }
 
-    console.log('Follow Requests Received:', userRelationship.followRequestsReceived);
-
     const followRequestsReceived = await User.find({
-      _id: { $in: userRelationship.followRequestsReceived }
-    }).select('name username profileImg');
+      _id: { $in: userRelationship.followRequestsReceived },
+    }).select('name username profileImg isCreator');
 
     console.log('Follow Requests Received Users:', followRequestsReceived);
 
     const followers = await User.find({
-      _id: { $in: userRelationship.followers }
-    }).select('name username profileImg');
+      _id: { $in: userRelationship.followers },
+    }).select('name username profileImg isCreator');
 
     console.log('Followers:', followers);
 
     const notifications = [];
 
-    followRequestsReceived.forEach(user => {
+    followRequestsReceived.forEach((user) => {
       notifications.push({
         type: 'follow_request_received',
         userId: user._id,
@@ -481,12 +477,17 @@ exports.getUserNotifications = async function(req, res) {
         username: user.username,
         profileImg: user.profileImg,
         message: `${user.username} has sent you a follow request.`,
-        createdAt: new Date() // Add timestamp
+        createdAt: new Date(), 
+        followed: false,
       });
     });
 
-    followers.forEach(user => {
-      if (!userRelationship.followRequestsReceived.includes(user._id.toString())) {
+    followers.forEach((user) => {
+      const isAcceptedRequest = !userRelationship.followRequestsReceived.includes(
+        user._id.toString()
+      );
+
+      if (isAcceptedRequest) {
         notifications.push({
           type: 'follow_request_accepted',
           userId: user._id,
@@ -494,7 +495,8 @@ exports.getUserNotifications = async function(req, res) {
           username: user.username,
           profileImg: user.profileImg,
           message: `${user.username} has accepted your follow request.`,
-          createdAt: new Date() // Add timestamp
+          createdAt: new Date(), // Add timestamp
+          followed: user.isCreator, // Show followed status for creator accounts
         });
       }
     });

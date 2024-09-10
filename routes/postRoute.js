@@ -21,7 +21,8 @@ router.post('/posts/unlike/:postId', userAuthMiddleware, postController.unlikePo
 router.post('/posts/save/:postId', userAuthMiddleware, postController.savePost);
 router.delete('/posts/save/:postId', userAuthMiddleware, postController.removeSavedPost);
 
-router.get('/posts/saved/:postId',userAuthMiddleware, postController.getSavedPosts);
+router.get('/posts/saved', userAuthMiddleware, postController.getAllPosts);
+router.get('/posts/saved/:postId',userAuthMiddleware, postController.getSavedPost);
 // router.get('/posts/saved',userAuthMiddleware, postController.getSavedPosts);
 
 module.exports = router;
