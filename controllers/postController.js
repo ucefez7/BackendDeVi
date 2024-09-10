@@ -8,27 +8,46 @@ const cloudinary = require('../config/cloudinaryConfig');
 const createHttpError = require('http-errors');
 
 
+// const postStorage = new CloudinaryStorage({
+//   cloudinary: cloudinary,
+//   params: {
+//     folder: 'post_images',
+//     allowed_formats: ['jpg', 'jpeg', 'png'],
+//   },
+// });
+
+// const uploadPostImg = multer({ storage: postStorage });
+
+
 const postStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
-  params: {
-    folder: 'post_images',
-    allowed_formats: ['jpg', 'jpeg', 'png'],
+  params: async (req, file) => {
+    // Define a folder for images and videos separately
+    let folder = 'post_images';
+    if (file.mimetype.startsWith('video')) {
+      folder = 'post_videos';
+    }
+
+    return {
+      folder: folder,
+      resource_type: file.mimetype.startsWith('video') ? 'video' : 'image',
+      allowed_formats: ['jpg', 'jpeg', 'png', 'mp4', 'mov'], // Add allowed video formats
+    };
   },
 });
 
-const uploadPostImg = multer({ storage: postStorage });
+const uploadPostMedia = multer({ storage: postStorage });
 
 
 
 
-
-// // Create a new post with image upload
+// // Create a new post with multiple images upload
 // exports.createPost = [
-//   uploadPostImg.single('media'),
+//   uploadPostImg.array('media', 5),
 //   async (req, res, next) => {
 //     const userId = req.user.id;
 //     const { title, description, location, category, subCategory } = req.body;
-//     const mediaURL = req.file ? req.file.path : null;
+//     const mediaURLs = req.files ? req.files.map(file => file.path) : [];
 
 //     try {
 //       if (!title || !category || !subCategory) {
@@ -39,10 +58,10 @@ const uploadPostImg = multer({ storage: postStorage });
 //         userId,
 //         title,
 //         description,
-//         media: mediaURL,
+//         media: mediaURLs,
 //         location,
-//         category,
-//         subCategory,
+//         category: Array.isArray(category) ? category : [category],
+//         subCategory: Array.isArray(subCategory) ? subCategory : [subCategory],
 //         likes: [],
 //         comments: [],
 //         shared: [],
@@ -57,9 +76,11 @@ const uploadPostImg = multer({ storage: postStorage });
 //   },
 // ];
 
-// Create a new post with multiple images upload
+
+
+// Create a new post with multiple media (images and videos) upload
 exports.createPost = [
-  uploadPostImg.array('media', 5),
+  uploadPostMedia.array('media', 5), // Updated to use uploadPostMedia
   async (req, res, next) => {
     const userId = req.user.id;
     const { title, description, location, category, subCategory } = req.body;
@@ -175,44 +196,44 @@ exports.getPostById = async (req, res, next) => {
 
 
 
-// // Update a post
-// exports.updatePost = async (req, res, next) => {
-//   const userId = req.user.id;
-//   const { postId } = req.params;
-//   const { title, description, location, category, subCategory } = req.body;
-//   const mediaURL = req.file ? req.file.path : null;
+// // Update a post with multiple images upload
+// exports.updatePost = [
+//   uploadPostImg.array('media', 5),
+//   async (req, res, next) => {
+//     const userId = req.user.id;
+//     const { postId } = req.params;
+//     const { title, description, location, category, subCategory } = req.body;
+//     const mediaURLs = req.files ? req.files.map(file => file.path) : null;
 
-//   try {
-//     const post = await PostModel.findOne({ _id: postId });
+//     try {
+//       const post = await PostModel.findOne({ _id: postId });
 
-//     if (!post) {
-//       throw createHttpError(404, 'Post not found');
+//       if (!post) {
+//         throw createHttpError(404, 'Post not found');
+//       }
+
+//       if (post.userId.toString() !== userId) {
+//         throw createHttpError(401, "This post doesn't belong to this user");
+//       }
+//       const updatedPost = await PostModel.findByIdAndUpdate(postId, {
+//         title,
+//         description,
+//         media: mediaURLs ? [...post.media, ...mediaURLs] : post.media,
+//         location,
+//         category: Array.isArray(category) ? category : [category],
+//         subCategory: Array.isArray(subCategory) ? subCategory : [subCategory],
+//       }, { new: true });
+
+//       res.status(200).json(updatedPost);
+//     } catch (error) {
+//       next(error);
 //     }
+//   },
+// ];
 
-//     if (post.userId.toString() !== userId) {
-//       throw createHttpError(401, "This post doesn't belong to this user");
-//     }
-
-//     const updatedPost = await PostModel.findByIdAndUpdate(postId, {
-//       title,
-//       description,
-//       media: mediaURL || post.media,
-//       location,
-//       category,
-//       subCategory,
-//     }, { new: true });
-
-//     res.status(200).json(updatedPost);
-//   } catch (error) {
-//     next(error);
-//   }
-// };
-
-
-
-// Update a post with multiple images upload
+// Update a post with multiple media (images and videos) upload
 exports.updatePost = [
-  uploadPostImg.array('media', 5),
+  uploadPostMedia.array('media', 5), // Updated to use uploadPostMedia
   async (req, res, next) => {
     const userId = req.user.id;
     const { postId } = req.params;
@@ -230,14 +251,18 @@ exports.updatePost = [
         throw createHttpError(401, "This post doesn't belong to this user");
       }
 
-      const updatedPost = await PostModel.findByIdAndUpdate(postId, {
-        title,
-        description,
-        media: mediaURLs ? [...post.media, ...mediaURLs] : post.media,
-        location,
-        category: Array.isArray(category) ? category : [category],
-        subCategory: Array.isArray(subCategory) ? subCategory : [subCategory],
-      }, { new: true });
+      const updatedPost = await PostModel.findByIdAndUpdate(
+        postId,
+        {
+          title,
+          description,
+          media: mediaURLs ? [...post.media, ...mediaURLs] : post.media,
+          location,
+          category: Array.isArray(category) ? category : [category],
+          subCategory: Array.isArray(subCategory) ? subCategory : [subCategory],
+        },
+        { new: true }
+      );
 
       res.status(200).json(updatedPost);
     } catch (error) {
@@ -245,6 +270,7 @@ exports.updatePost = [
     }
   },
 ];
+
 
 
 
