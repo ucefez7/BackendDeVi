@@ -8,6 +8,105 @@ const cloudinary = require('../config/cloudinaryConfig');
 const createHttpError = require('http-errors');
 
 
+// const postStorage = new CloudinaryStorage({
+//   cloudinary: cloudinary,
+//   params: async (req, file) => {
+//     let folder = 'post_images';
+//     if (file.mimetype.startsWith('video')) {
+//       folder = 'post_videos';
+//     }
+
+//     return {
+//       folder: folder,
+//       resource_type: file.mimetype.startsWith('video') ? 'video' : 'image',
+//       allowed_formats: ['jpg', 'jpeg', 'png', 'mp4', 'mov'],
+//     };
+//   },
+// });
+
+// const uploadPostMedia = multer({ storage: postStorage });
+
+
+// // Create a new post with multiple media (images and videos) upload
+// exports.createPost = [
+//   uploadPostMedia.array('media', 5), 
+//   async (req, res, next) => {
+//     const userId = req.user.id;
+//     const { title, description, location, category, subCategory, isBlog } = req.body;
+//     const mediaURLs = req.files ? req.files.map(file => file.path) : [];
+
+//     try {
+//       if (!title || !category || !subCategory) {
+//         throw createHttpError(400, 'Parameters Missing');
+//       }
+
+//       const newPost = await PostModel.create({
+//         userId,
+//         title,
+//         description,
+//         media: mediaURLs,
+//         location,
+//         category: Array.isArray(category) ? category : [category],
+//         subCategory: Array.isArray(subCategory) ? subCategory : [subCategory],
+//         likes: [],
+//         comments: [],
+//         shared: [],
+//         isBlocked: false,
+//         sensitive: false,
+//         isBlog,
+//       });
+
+//       res.status(201).json({ newPost });
+//     } catch (error) {
+//       next(error);
+//     }
+//   },
+// ];
+
+
+// // Update a post with multiple media (images and videos) upload
+// exports.updatePost = [
+//   uploadPostMedia.array('media', 5),
+//   async (req, res, next) => {
+//     const userId = req.user.id;
+//     const { postId } = req.params;
+//     const { title, description, location, category, subCategory } = req.body;
+//     const mediaURLs = req.files ? req.files.map(file => file.path) : null;
+
+//     try {
+//       const post = await PostModel.findOne({ _id: postId });
+
+//       if (!post) {
+//         throw createHttpError(404, 'Post not found');
+//       }
+
+//       if (post.userId.toString() !== userId) {
+//         throw createHttpError(401, "This post doesn't belong to this user");
+//       }
+
+//       const updatedPost = await PostModel.findByIdAndUpdate(
+//         postId,
+//         {
+//           title,
+//           description,
+//           media: mediaURLs ? [...post.media, ...mediaURLs] : post.media,
+//           location,
+//           category: Array.isArray(category) ? category : [category],
+//           subCategory: Array.isArray(subCategory) ? subCategory : [subCategory],
+//         },
+//         { new: true }
+//       );
+
+//       res.status(200).json(updatedPost);
+//     } catch (error) {
+//       next(error);
+//     }
+//   },
+// ];
+
+
+
+// Cloudinary storage configuration for post media and cover photo
 const postStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: async (req, file) => {
@@ -26,14 +125,14 @@ const postStorage = new CloudinaryStorage({
 
 const uploadPostMedia = multer({ storage: postStorage });
 
-
-// Create a new post with multiple media (images and videos) upload
+// Create a new post with multiple media (images and videos) and an optional cover photo upload
 exports.createPost = [
-  uploadPostMedia.array('media', 5), 
+  uploadPostMedia.fields([{ name: 'media', maxCount: 5 }, { name: 'coverPhoto', maxCount: 1 }]),
   async (req, res, next) => {
     const userId = req.user.id;
     const { title, description, location, category, subCategory, isBlog } = req.body;
-    const mediaURLs = req.files ? req.files.map(file => file.path) : [];
+    const mediaURLs = req.files['media'] ? req.files['media'].map(file => file.path) : [];
+    const coverPhotoURL = req.files['coverPhoto'] ? req.files['coverPhoto'][0].path : null; 
 
     try {
       if (!title || !category || !subCategory) {
@@ -45,6 +144,7 @@ exports.createPost = [
         title,
         description,
         media: mediaURLs,
+        coverPhoto: coverPhotoURL, 
         location,
         category: Array.isArray(category) ? category : [category],
         subCategory: Array.isArray(subCategory) ? subCategory : [subCategory],
@@ -63,6 +163,47 @@ exports.createPost = [
   },
 ];
 
+// Update a post with multiple media (images and videos) and an optional cover photo upload
+exports.updatePost = [
+  uploadPostMedia.fields([{ name: 'media', maxCount: 5 }, { name: 'coverPhoto', maxCount: 1 }]),
+  async (req, res, next) => {
+    const userId = req.user.id;
+    const { postId } = req.params;
+    const { title, description, location, category, subCategory } = req.body;
+    const mediaURLs = req.files['media'] ? req.files['media'].map(file => file.path) : [];
+    const coverPhotoURL = req.files['coverPhoto'] ? req.files['coverPhoto'][0].path : null; 
+
+    try {
+      const post = await PostModel.findOne({ _id: postId });
+
+      if (!post) {
+        throw createHttpError(404, 'Post not found');
+      }
+
+      if (post.userId.toString() !== userId) {
+        throw createHttpError(401, "This post doesn't belong to this user");
+      }
+
+      const updatedPost = await PostModel.findByIdAndUpdate(
+        postId,
+        {
+          title,
+          description,
+          media: mediaURLs.length > 0 ? [...post.media, ...mediaURLs] : post.media,
+          coverPhoto: coverPhotoURL || post.coverPhoto,
+          location,
+          category: Array.isArray(category) ? category : [category],
+          subCategory: Array.isArray(subCategory) ? subCategory : [subCategory],
+        },
+        { new: true }
+      );
+
+      res.status(200).json(updatedPost);
+    } catch (error) {
+      next(error);
+    }
+  },
+];
 
 
 
@@ -143,46 +284,6 @@ exports.getPostById = async (req, res, next) => {
   }
 };
 
-
-// Update a post with multiple media (images and videos) upload
-exports.updatePost = [
-  uploadPostMedia.array('media', 5), // Updated to use uploadPostMedia
-  async (req, res, next) => {
-    const userId = req.user.id;
-    const { postId } = req.params;
-    const { title, description, location, category, subCategory } = req.body;
-    const mediaURLs = req.files ? req.files.map(file => file.path) : null;
-
-    try {
-      const post = await PostModel.findOne({ _id: postId });
-
-      if (!post) {
-        throw createHttpError(404, 'Post not found');
-      }
-
-      if (post.userId.toString() !== userId) {
-        throw createHttpError(401, "This post doesn't belong to this user");
-      }
-
-      const updatedPost = await PostModel.findByIdAndUpdate(
-        postId,
-        {
-          title,
-          description,
-          media: mediaURLs ? [...post.media, ...mediaURLs] : post.media,
-          location,
-          category: Array.isArray(category) ? category : [category],
-          subCategory: Array.isArray(subCategory) ? subCategory : [subCategory],
-        },
-        { new: true }
-      );
-
-      res.status(200).json(updatedPost);
-    } catch (error) {
-      next(error);
-    }
-  },
-];
 
 
 
@@ -474,7 +575,7 @@ exports.getPostsByCategory = async (req, res, next) => {
     if (!category) {
       throw createHttpError(400, 'Category parameter is missing');
     }
-    const posts = await PostModel.find({ category, isBlocked: false })
+    const posts = await PostModel.find({ category: { $regex: new RegExp(category, 'i') }, isBlocked: false })
       .populate({
         path: 'userId',
         select: 'username name',
@@ -500,8 +601,10 @@ exports.getPostsByCategory = async (req, res, next) => {
         },
       };
     });
+
     res.status(200).json(postsWithUserDetails);
   } catch (error) {
     next(error);
   }
 };
+
