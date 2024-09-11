@@ -141,10 +141,10 @@ exports.getAllPosts = async (req, res, next) => {
         path: 'userId',
         select: 'username name',
       })
-      .populate({
-        path: 'comments',
-        populate: { path: 'userId', select: 'username' },
-      })
+      // .populate({
+      //   path: 'comments',
+      //   populate: { path: 'userId', select: 'username' },
+      // })
       .sort({ createdAt: -1 });
 
     if (!posts.length) {
@@ -184,11 +184,11 @@ exports.getPostById = async (req, res, next) => {
       .populate({
         path: 'userId',
         select: 'username name',
-      })
-      .populate({
-        path: 'comments',
-        populate: { path: 'userId', select: 'username' },
       });
+      // .populate({
+      //   path: 'comments',
+      //   populate: { path: 'userId', select: 'username' },
+      // });
 
     if (!post) {
       throw createHttpError(404, 'No Post found with this ID');
@@ -454,20 +454,15 @@ exports.getSavedPosts = async (req, res, next) => {
 
 
 
-//Get all posts by an user
+// Get all posts by a user
 exports.getPostsByUser = async (req, res, next) => {
   const { userId } = req.params;
 
   try {
-    
     const posts = await PostModel.find({ userId, isBlocked: false })
       .populate({
         path: 'userId',
         select: 'username name',
-      })
-      .populate({
-        path: 'comments',
-        populate: { path: 'userId', select: 'username' },
       })
       .sort({ createdAt: -1 });
 
@@ -488,11 +483,13 @@ exports.getPostsByUser = async (req, res, next) => {
         mediaType,
       };
     });
+    
     res.status(200).json(postsWithUserDetails);
   } catch (error) {
     next(error);
   }
 };
+
 
 
 
@@ -508,15 +505,11 @@ exports.getPostsByCategory = async (req, res, next) => {
     })
       .populate({
         path: 'userId',
-        select: 'username name followers following', 
-      })
-      .populate({
-        path: 'comments',
-        populate: { path: 'userId', select: 'username' },
+        select: 'username name followers following',
       })
       .populate({
         path: 'likes',
-        select: 'username name', 
+        select: 'username name',
       })
       .sort({ createdAt: -1 });
 
@@ -531,11 +524,11 @@ exports.getPostsByCategory = async (req, res, next) => {
         ...post.toObject(),
         userId: {
           ...user.toObject(),
-          followingCount: user.following ? user.following.length : 0, 
-          followersCount: user.followers ? user.followers.length : 0, 
+          followingCount: user.following ? user.following.length : 0,
+          followersCount: user.followers ? user.followers.length : 0,
         },
-        likes: post.likes, 
-        mediaType, 
+        likes: post.likes,
+        mediaType,
       };
     });
 
@@ -544,5 +537,6 @@ exports.getPostsByCategory = async (req, res, next) => {
     next(error);
   }
 };
+
 
 
