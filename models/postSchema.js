@@ -32,11 +32,11 @@ const postSchema = new Schema({
   },
   category: {
     type: [String],
-    required: [true, 'Category is required']
+    // required: [true, 'Category is required']
   },
   subCategory: {
     type: [String],
-    required: [true, 'SubCategory is required']
+    //required: [true, 'SubCategory is required']
   },
   likes: [{
     type: mongoose.Types.ObjectId,
