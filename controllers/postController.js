@@ -110,24 +110,22 @@ exports.updatePost = [
 
 
 
-// Function to determine media type of a post
+// Function to determine the media type of a post
 const classifyMediaType = (post) => {
   if (post.isBlog) {
     return 'Blog';
   } else if (post.media && post.media.length > 0) {
-    const images = post.media.filter(media => media.endsWith('.jpg') || media.endsWith('.jpeg') || media.endsWith('.png'));
     const videos = post.media.filter(media => media.endsWith('.mp4') || media.endsWith('.mov'));
 
     if (videos.length > 0) {
       return 'Video';
-    } else if (images.length > 1) {
-      return 'Multiple Images';
-    } else if (images.length === 1) {
+    } else {
       return 'Image';
     }
   }
   return 'Unknown';
 };
+
 
 
 
@@ -141,10 +139,6 @@ exports.getAllPosts = async (req, res, next) => {
         path: 'userId',
         select: 'username name',
       })
-      // .populate({
-      //   path: 'comments',
-      //   populate: { path: 'userId', select: 'username' },
-      // })
       .sort({ createdAt: -1 });
 
     if (!posts.length) {
@@ -175,6 +169,7 @@ exports.getAllPosts = async (req, res, next) => {
 
 
 
+
 // Get a single post by ID
 exports.getPostById = async (req, res, next) => {
   const { postId } = req.params;
@@ -185,10 +180,6 @@ exports.getPostById = async (req, res, next) => {
         path: 'userId',
         select: 'username name',
       });
-      // .populate({
-      //   path: 'comments',
-      //   populate: { path: 'userId', select: 'username' },
-      // });
 
     if (!post) {
       throw createHttpError(404, 'No Post found with this ID');
@@ -211,6 +202,7 @@ exports.getPostById = async (req, res, next) => {
     next(error);
   }
 };
+
 
 
 
