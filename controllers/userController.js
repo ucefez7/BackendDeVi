@@ -58,14 +58,13 @@ exports.getUserById = async function (req, res) {
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    // Fetch the relationship data
+   
     const relationship = await UserRelationship.findOne({ userId: user._id })
       .populate('following', 'username name profileImg')
       .populate('followers', 'username name profileImg');
 
     const currentUserRelationship = await UserRelationship.findOne({ userId: req.user.id });
-
-    // Determine relationship status between current user and the fetched user
+    
     let relationshipStatus = 'none';
     if (currentUserRelationship) {
       if (currentUserRelationship.following.includes(user._id)) {
@@ -107,6 +106,8 @@ exports.getUserById = async function (req, res) {
   }
 };
 
+
+
 // Check relationship while searching users
 exports.searchUsersByName = async function (req, res) {
   const searchTerm = req.query.name;
@@ -138,11 +139,11 @@ exports.searchUsersByName = async function (req, res) {
       return res.status(404).json({ message: 'No users found' });
     }
 
-    // Fetch the current user's relationships
+    
     const currentUserRelationship = await UserRelationship.findOne({ userId: req.user.id });
 
     const userResponses = filteredUsers.map(user => {
-      // Determine relationship status
+     
       let relationshipStatus = 'none';
       if (currentUserRelationship) {
         if (currentUserRelationship.following.includes(user._id)) {
@@ -380,7 +381,6 @@ exports.getRelationshipStatus = async function(req, res) {
           return res.status(404).json({ msg: 'User or Target User not found' });
       }
 
-      // Fetch the relationship documents for both users
       const userRelationship = await UserRelationship.findOne({ userId: user._id });
       const targetUserRelationship = await UserRelationship.findOne({ userId: targetUser._id });
 
@@ -388,7 +388,7 @@ exports.getRelationshipStatus = async function(req, res) {
           return res.status(404).json({ msg: 'Relationship data not found' });
       }
 
-      // Determine the relationship status
+      
       const status = {
           isFollowing: userRelationship.following.includes(targetUser._id),
           isFollowedBy: targetUserRelationship.following.includes(user._id),
@@ -495,16 +495,14 @@ exports.getUserNotifications = async function (req, res) {
           username: user.username,
           profileImg: user.profileImg,
           message: `${user.username} has accepted your follow request.`,
-          createdAt: new Date(), // Add timestamp
-          followed: user.isCreator, // Show followed status for creator accounts
+          createdAt: new Date(), 
+          followed: user.isCreator,
         });
       }
     });
 
-    // Sort notifications by createdAt
     notifications.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-    // Log final notifications array
+    
     console.log('Notifications:', notifications);
 
     res.status(200).json({ notifications });

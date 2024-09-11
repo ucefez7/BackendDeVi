@@ -5,8 +5,8 @@ const userAuthMiddleware = require('../middlewares/userAuthMiddleware');
 
 // Post-related routes
 router.post('/posts/create-post', userAuthMiddleware, postController.createPost);
-router.get('/posts/all', postController.getAllPosts);
-router.get('/posts/:postId', postController.getPostById);
+router.get('/posts/all',userAuthMiddleware, postController.getAllPosts);
+router.get('/posts/:postId',userAuthMiddleware, postController.getPostById);
 router.put('/posts/:postId', userAuthMiddleware, postController.updatePost);
 router.delete('/posts/:postId', userAuthMiddleware, postController.deletePost);
 router.get('/posts/user/:userId',userAuthMiddleware, postController.getPostsByUser);
@@ -22,9 +22,8 @@ router.post('/posts/unlike/:postId', userAuthMiddleware, postController.unlikePo
 // Save/Remove Saved Post routes
 router.post('/posts/save/:postId', userAuthMiddleware, postController.savePost);
 router.delete('/posts/save/:postId', userAuthMiddleware, postController.removeSavedPost);
+router.post('/posts/saved', userAuthMiddleware, postController.getSavedPosts);
+// router.post('/posts/saved/:postId',userAuthMiddleware, postController.getSavedPost);
 
-router.get('/posts/saved', userAuthMiddleware, postController.getAllPosts);
-router.get('/posts/saved/:postId',userAuthMiddleware, postController.getSavedPost);
-// router.get('/posts/saved',userAuthMiddleware, postController.getSavedPosts);
 
 module.exports = router;

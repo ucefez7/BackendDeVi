@@ -407,6 +407,64 @@ exports.removeSavedPost = async (req, res, next) => {
 
 
 
+// Get all saved posts of a user
+exports.getSavedPosts = async (req, res, next) => {
+  const userId = req.user.id;
+
+  try {
+    const savePost = await SavePostModel.findOne({ userId }).populate('posts');
+    
+    if (!savePost || !savePost.posts.length) {
+      return res.status(404).json({ message: 'No saved posts found for this user' });
+    }
+
+    const savedPosts = await PostModel.find({ _id: { $in: savePost.posts } })
+      .populate({
+        path: 'userId',
+        select: 'username name',
+      })
+      .sort({ createdAt: -1 });
+    
+    if (!savedPosts.length) {
+      return res.status(404).json({ message: 'No saved posts found' });
+    }
+    
+    const savedPostsWithDetails = savedPosts.map(post => {
+      const user = post.userId;
+      const mediaType = classifyMediaType(post);
+      return {
+        ...post.toObject(),
+        userId: {
+          ...user.toObject(),
+          followingCount: user.following ? user.following.length : 0,
+          followersCount: user.followers ? user.followers.length : 0,
+        },
+        mediaType: mediaType,
+      };
+    });
+
+    res.status(200).json(savedPostsWithDetails);
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+
+// // Get Saved Posts
+// exports.getSavedPosts = async (req, res, next) => {
+//   const userId = req.user.id;
+//   try {
+//     const savePost = await SavePostModel.findOne({ userId }).populate('posts');
+//     if (!savePost || savePost.posts.length === 0) {
+//       throw createHttpError(404, 'No saved posts found for this user');
+//     }
+//     res.status(200).json({ status: 'success', data: savePost.posts });
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+
 // Get Saved Posts
 exports.getSavedPost = async (req, res, next) => {
   const userId = req.user.id;
@@ -424,23 +482,6 @@ exports.getSavedPost = async (req, res, next) => {
     next(error);
   }
 };
-
-
-
-// Get Saved Posts
-exports.getSavedPosts = async (req, res, next) => {
-  const userId = req.user.id;
-  try {
-    const savePost = await SavePostModel.findOne({ userId }).populate('posts');
-    if (!savePost || savePost.posts.length === 0) {
-      throw createHttpError(404, 'No saved posts found for this user');
-    }
-    res.status(200).json({ status: 'success', data: savePost.posts });
-  } catch (error) {
-    next(error);
-  }
-};
-
 
 
 
