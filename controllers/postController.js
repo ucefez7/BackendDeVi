@@ -8,103 +8,6 @@ const cloudinary = require('../config/cloudinaryConfig');
 const createHttpError = require('http-errors');
 
 
-// const postStorage = new CloudinaryStorage({
-//   cloudinary: cloudinary,
-//   params: async (req, file) => {
-//     let folder = 'post_images';
-//     if (file.mimetype.startsWith('video')) {
-//       folder = 'post_videos';
-//     }
-
-//     return {
-//       folder: folder,
-//       resource_type: file.mimetype.startsWith('video') ? 'video' : 'image',
-//       allowed_formats: ['jpg', 'jpeg', 'png', 'mp4', 'mov'],
-//     };
-//   },
-// });
-
-// const uploadPostMedia = multer({ storage: postStorage });
-
-
-// // Create a new post with multiple media (images and videos) upload
-// exports.createPost = [
-//   uploadPostMedia.array('media', 5), 
-//   async (req, res, next) => {
-//     const userId = req.user.id;
-//     const { title, description, location, category, subCategory, isBlog } = req.body;
-//     const mediaURLs = req.files ? req.files.map(file => file.path) : [];
-
-//     try {
-//       if (!title || !category || !subCategory) {
-//         throw createHttpError(400, 'Parameters Missing');
-//       }
-
-//       const newPost = await PostModel.create({
-//         userId,
-//         title,
-//         description,
-//         media: mediaURLs,
-//         location,
-//         category: Array.isArray(category) ? category : [category],
-//         subCategory: Array.isArray(subCategory) ? subCategory : [subCategory],
-//         likes: [],
-//         comments: [],
-//         shared: [],
-//         isBlocked: false,
-//         sensitive: false,
-//         isBlog,
-//       });
-
-//       res.status(201).json({ newPost });
-//     } catch (error) {
-//       next(error);
-//     }
-//   },
-// ];
-
-
-// // Update a post with multiple media (images and videos) upload
-// exports.updatePost = [
-//   uploadPostMedia.array('media', 5),
-//   async (req, res, next) => {
-//     const userId = req.user.id;
-//     const { postId } = req.params;
-//     const { title, description, location, category, subCategory } = req.body;
-//     const mediaURLs = req.files ? req.files.map(file => file.path) : null;
-
-//     try {
-//       const post = await PostModel.findOne({ _id: postId });
-
-//       if (!post) {
-//         throw createHttpError(404, 'Post not found');
-//       }
-
-//       if (post.userId.toString() !== userId) {
-//         throw createHttpError(401, "This post doesn't belong to this user");
-//       }
-
-//       const updatedPost = await PostModel.findByIdAndUpdate(
-//         postId,
-//         {
-//           title,
-//           description,
-//           media: mediaURLs ? [...post.media, ...mediaURLs] : post.media,
-//           location,
-//           category: Array.isArray(category) ? category : [category],
-//           subCategory: Array.isArray(subCategory) ? subCategory : [subCategory],
-//         },
-//         { new: true }
-//       );
-
-//       res.status(200).json(updatedPost);
-//     } catch (error) {
-//       next(error);
-//     }
-//   },
-// ];
-
-
 
 // Cloudinary storage configuration for post media and cover photo
 const postStorage = new CloudinaryStorage({
@@ -207,10 +110,30 @@ exports.updatePost = [
 
 
 
+// Function to determine media type of a post
+const classifyMediaType = (post) => {
+  if (post.isBlog) {
+    return 'Blog';
+  } else if (post.media && post.media.length > 0) {
+    const images = post.media.filter(media => media.endsWith('.jpg') || media.endsWith('.jpeg') || media.endsWith('.png'));
+    const videos = post.media.filter(media => media.endsWith('.mp4') || media.endsWith('.mov'));
 
-// Get all posts
+    if (videos.length > 0) {
+      return 'Video';
+    } else if (images.length > 1) {
+      return 'Multiple Images';
+    } else if (images.length === 1) {
+      return 'Image';
+    }
+  }
+  return 'Unknown';
+};
+
+
+
+// Modified getAllPosts to include media type classification
 exports.getAllPosts = async (req, res, next) => {
-  console.log("All post loading...");
+  console.log("All posts loading...");
   
   try {
     const posts = await PostModel.find({ isBlocked: false })
@@ -230,6 +153,7 @@ exports.getAllPosts = async (req, res, next) => {
 
     const postsWithUserDetails = posts.map(post => {
       const user = post.userId;
+      const mediaType = classifyMediaType(post);
       return {
         ...post.toObject(),
         userId: {
@@ -237,6 +161,7 @@ exports.getAllPosts = async (req, res, next) => {
           followingCount: user.following ? user.following.length : 0,
           followersCount: user.followers ? user.followers.length : 0,
         },
+        mediaType: mediaType,
       };
     });
 
@@ -245,6 +170,7 @@ exports.getAllPosts = async (req, res, next) => {
     next(error);
   }
 };
+
 
 
 
@@ -269,6 +195,7 @@ exports.getPostById = async (req, res, next) => {
     }
 
     const user = post.userId;
+    const mediaType = classifyMediaType(post);
     const postWithUserDetails = {
       ...post.toObject(),
       userId: {
@@ -276,6 +203,7 @@ exports.getPostById = async (req, res, next) => {
         followingCount: user.following ? user.following.length : 0,
         followersCount: user.followers ? user.followers.length : 0,
       },
+      mediaType,
     };
 
     res.status(200).json(postWithUserDetails);
@@ -549,6 +477,7 @@ exports.getPostsByUser = async (req, res, next) => {
 
     const postsWithUserDetails = posts.map(post => {
       const user = post.userId;
+      const mediaType = classifyMediaType(post);
       return {
         ...post.toObject(),
         userId: {
@@ -556,6 +485,7 @@ exports.getPostsByUser = async (req, res, next) => {
           followingCount: user.following ? user.following.length : 0,
           followersCount: user.followers ? user.followers.length : 0,
         },
+        mediaType,
       };
     });
     res.status(200).json(postsWithUserDetails);
@@ -567,44 +497,52 @@ exports.getPostsByUser = async (req, res, next) => {
 
 
 
-// Get all posts by category
+// Get posts by category with media type
 exports.getPostsByCategory = async (req, res, next) => {
   const { category } = req.params;
 
   try {
-    if (!category) {
-      throw createHttpError(400, 'Category parameter is missing');
-    }
-    const posts = await PostModel.find({ category: { $regex: new RegExp(category, 'i') }, isBlocked: false })
+    const posts = await PostModel.find({
+      category: { $regex: new RegExp(`^${category}$`, 'i') },
+      isBlocked: false
+    })
       .populate({
         path: 'userId',
-        select: 'username name',
+        select: 'username name followers following', 
       })
       .populate({
         path: 'comments',
         populate: { path: 'userId', select: 'username' },
       })
+      .populate({
+        path: 'likes',
+        select: 'username name', 
+      })
       .sort({ createdAt: -1 });
 
     if (!posts.length) {
-      return res.status(404).json({ message: 'No posts found in this category' });
+      return res.status(404).json({ message: 'No posts found for this category' });
     }
 
-    const postsWithUserDetails = posts.map(post => {
+    const postsWithDetails = posts.map(post => {
       const user = post.userId;
+      const mediaType = classifyMediaType(post);
       return {
         ...post.toObject(),
         userId: {
           ...user.toObject(),
-          followingCount: user.following ? user.following.length : 0,
-          followersCount: user.followers ? user.followers.length : 0,
+          followingCount: user.following ? user.following.length : 0, 
+          followersCount: user.followers ? user.followers.length : 0, 
         },
+        likes: post.likes, 
+        mediaType, 
       };
     });
 
-    res.status(200).json(postsWithUserDetails);
+    res.status(200).json(postsWithDetails);
   } catch (error) {
     next(error);
   }
 };
+
 
