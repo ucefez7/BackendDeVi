@@ -30,7 +30,7 @@ const uploadPostMedia = multer({ storage: postStorage });
 
 
 
-//Create post
+// Create post
 exports.createPost = [
   uploadPostMedia.fields([
     { name: 'media', maxCount: 5 },
@@ -48,7 +48,7 @@ exports.createPost = [
       if (!title || !category || !subCategory) {
         return res.status(400).json({ error: 'Parameters Missing' });
       }
-      
+
       const newPost = await PostModel.create({
         userId,
         title,
@@ -67,7 +67,16 @@ exports.createPost = [
         isBlog,
       });
 
-      res.status(201).json({ newPost });
+      // Fetch user details including profession
+      const user = await UserModel.findById(userId).select('name username following followers profession');
+      res.status(201).json({
+        ...newPost.toObject(),
+        userId: {
+          ...user.toObject(),
+          followingCount: user.following ? user.following.length : 0,
+          followersCount: user.followers ? user.followers.length : 0,
+        },
+      });
     } catch (error) {
       console.error('Internal Server Error:', error);
       return res.status(500).json({ error: 'Internal Server Error. Please try again later.', details: error.message });
@@ -78,7 +87,8 @@ exports.createPost = [
 
 
 
-//Update post
+
+// Update post
 exports.updatePost = [
   uploadPostMedia.fields([
     { name: 'media', maxCount: 5 },
@@ -117,14 +127,22 @@ exports.updatePost = [
           subCategory: Array.isArray(subCategory) ? subCategory : [subCategory],
         },
         { new: true }
-      );
+      ).populate('userId', 'username name profession following followers');
 
-      res.status(200).json(updatedPost);
+      res.status(200).json({
+        ...updatedPost.toObject(),
+        userId: {
+          ...updatedPost.userId.toObject(),
+          followingCount: updatedPost.userId.following ? updatedPost.userId.following.length : 0,
+          followersCount: updatedPost.userId.followers ? updatedPost.userId.followers.length : 0,
+        },
+      });
     } catch (error) {
       next(error);
     }
   },
 ];
+
 
 
 
@@ -156,7 +174,7 @@ exports.getAllPosts = async (req, res, next) => {
     const posts = await PostModel.find({ isBlocked: false })
       .populate({
         path: 'userId',
-        select: 'username name',
+        select: 'username name profession following followers',
       })
       .sort({ createdAt: -1 });
 
@@ -189,6 +207,7 @@ exports.getAllPosts = async (req, res, next) => {
 
 
 
+
 // Get a single post by ID
 exports.getPostById = async (req, res, next) => {
   const { postId } = req.params;
@@ -197,7 +216,7 @@ exports.getPostById = async (req, res, next) => {
     const post = await PostModel.findById(postId)
       .populate({
         path: 'userId',
-        select: 'username name',
+        select: 'username name profession following followers',
       });
 
     if (!post) {
@@ -469,21 +488,6 @@ exports.getSavedPosts = async (req, res, next) => {
 };
 
 
-
-// // Get Saved Posts
-// exports.getSavedPosts = async (req, res, next) => {
-//   const userId = req.user.id;
-//   try {
-//     const savePost = await SavePostModel.findOne({ userId }).populate('posts');
-//     if (!savePost || savePost.posts.length === 0) {
-//       throw createHttpError(404, 'No saved posts found for this user');
-//     }
-//     res.status(200).json({ status: 'success', data: savePost.posts });
-//   } catch (error) {
-//     next(error);
-//   }
-// };
-
 // Get Saved Posts
 exports.getSavedPost = async (req, res, next) => {
   const userId = req.user.id;
@@ -514,7 +518,7 @@ exports.getPostsByUser = async (req, res, next) => {
     const posts = await PostModel.find({ userId, isBlocked: false })
       .populate({
         path: 'userId',
-        select: 'username name',
+        select: 'username profession name',
       })
       .sort({ createdAt: -1 });
 
@@ -557,7 +561,7 @@ exports.getPostsByCategory = async (req, res, next) => {
     })
       .populate({
         path: 'userId',
-        select: 'username name followers following',
+        select: 'username name profession followers following',
       })
       .populate({
         path: 'likes',
