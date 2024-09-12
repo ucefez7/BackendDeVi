@@ -28,6 +28,46 @@ const postStorage = new CloudinaryStorage({
 
 const uploadPostMedia = multer({ storage: postStorage });
 
+// // Create a new post with multiple media (images and videos) and an optional cover photo upload
+// exports.createPost = [
+//   uploadPostMedia.fields([{ name: 'media', maxCount: 5 }, { name: 'coverPhoto', maxCount: 1 }]),
+//   async (req, res, next) => {
+//     const userId = req.user.id;
+//     const { title, description, location, category, subCategory, isBlog } = req.body;
+//     const mediaURLs = req.files['media'] ? req.files['media'].map(file => file.path) : [];
+//     const coverPhotoURL = req.files['coverPhoto'] ? req.files['coverPhoto'][0].path : null; 
+
+//     try {
+//       if (!title || !category || !subCategory) {
+//         throw createHttpError(400, 'Parameters Missing');
+//       }
+
+//       const newPost = await PostModel.create({
+//         userId,
+//         title,
+//         description,
+//         media: mediaURLs,
+//         coverPhoto: coverPhotoURL, 
+//         location,
+//         category: Array.isArray(category) ? category : [category],
+//         subCategory: Array.isArray(subCategory) ? subCategory : [subCategory],
+//         likes: [],
+//         comments: [],
+//         shared: [],
+//         isBlocked: false,
+//         sensitive: false,
+//         isBlog,
+//       });
+
+//       res.status(201).json({ newPost });
+//     } catch (error) {
+//       next(error);
+//     }
+//   },
+// ];
+
+
+
 // Create a new post with multiple media (images and videos) and an optional cover photo upload
 exports.createPost = [
   uploadPostMedia.fields([{ name: 'media', maxCount: 5 }, { name: 'coverPhoto', maxCount: 1 }]),
@@ -35,19 +75,19 @@ exports.createPost = [
     const userId = req.user.id;
     const { title, description, location, category, subCategory, isBlog } = req.body;
     const mediaURLs = req.files['media'] ? req.files['media'].map(file => file.path) : [];
-    const coverPhotoURL = req.files['coverPhoto'] ? req.files['coverPhoto'][0].path : null; 
+    const coverPhotoURL = req.files['coverPhoto'] ? req.files['coverPhoto'][0].path : null;
 
     try {
+      
       if (!title || !category || !subCategory) {
-        throw createHttpError(400, 'Parameters Missing');
+        return res.status(400).json({ error: 'Parameters Missing' });
       }
-
       const newPost = await PostModel.create({
         userId,
         title,
         description,
         media: mediaURLs,
-        coverPhoto: coverPhotoURL, 
+        coverPhoto: coverPhotoURL,
         location,
         category: Array.isArray(category) ? category : [category],
         subCategory: Array.isArray(subCategory) ? subCategory : [subCategory],
@@ -61,10 +101,15 @@ exports.createPost = [
 
       res.status(201).json({ newPost });
     } catch (error) {
-      next(error);
+      
+      console.error('Internal Server Error:', error);
+      return res.status(500).json({ error: 'Internal Server Error. Please try again later.', details: error.message });
     }
   },
 ];
+
+
+
 
 // Update a post with multiple media (images and videos) and an optional cover photo upload
 exports.updatePost = [
