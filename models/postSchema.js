@@ -16,12 +16,12 @@ const postSchema = new Schema({
   },
   media: {
     type: [String],
-    validate: {
-      validator: function (arr) {
-        return arr.length > 0;
-      },
-      message: 'At least one media file is required'
-    },
+    // validate: {
+    //   validator: function (arr) {
+    //     return arr.length > 0;
+    //   },
+    //   message: 'At least one media file is required'
+    // },
     required: [true, 'Media is required']
   },
   coverPhoto: {
