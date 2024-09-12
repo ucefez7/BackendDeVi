@@ -28,66 +28,34 @@ const postStorage = new CloudinaryStorage({
 
 const uploadPostMedia = multer({ storage: postStorage });
 
-// // Create a new post with multiple media (images and videos) and an optional cover photo upload
-// exports.createPost = [
-//   uploadPostMedia.fields([{ name: 'media', maxCount: 5 }, { name: 'coverPhoto', maxCount: 1 }]),
-//   async (req, res, next) => {
-//     const userId = req.user.id;
-//     const { title, description, location, category, subCategory, isBlog } = req.body;
-//     const mediaURLs = req.files['media'] ? req.files['media'].map(file => file.path) : [];
-//     const coverPhotoURL = req.files['coverPhoto'] ? req.files['coverPhoto'][0].path : null; 
-
-//     try {
-//       if (!title || !category || !subCategory) {
-//         throw createHttpError(400, 'Parameters Missing');
-//       }
-
-//       const newPost = await PostModel.create({
-//         userId,
-//         title,
-//         description,
-//         media: mediaURLs,
-//         coverPhoto: coverPhotoURL, 
-//         location,
-//         category: Array.isArray(category) ? category : [category],
-//         subCategory: Array.isArray(subCategory) ? subCategory : [subCategory],
-//         likes: [],
-//         comments: [],
-//         shared: [],
-//         isBlocked: false,
-//         sensitive: false,
-//         isBlog,
-//       });
-
-//       res.status(201).json({ newPost });
-//     } catch (error) {
-//       next(error);
-//     }
-//   },
-// ];
 
 
-
-// Create a new post with multiple media (images and videos) and an optional cover photo upload
+//Create post
 exports.createPost = [
-  uploadPostMedia.fields([{ name: 'media', maxCount: 5 }, { name: 'coverPhoto', maxCount: 1 }]),
+  uploadPostMedia.fields([
+    { name: 'media', maxCount: 5 },
+    { name: 'coverPhoto', maxCount: 1 },
+    { name: 'video', maxCount: 1 }
+  ]),
   async (req, res, next) => {
     const userId = req.user.id;
     const { title, description, location, category, subCategory, isBlog } = req.body;
     const mediaURLs = req.files['media'] ? req.files['media'].map(file => file.path) : [];
     const coverPhotoURL = req.files['coverPhoto'] ? req.files['coverPhoto'][0].path : null;
+    const videoURL = req.files['video'] ? req.files['video'][0].path : null;
 
     try {
-      
       if (!title || !category || !subCategory) {
         return res.status(400).json({ error: 'Parameters Missing' });
       }
+      
       const newPost = await PostModel.create({
         userId,
         title,
         description,
         media: mediaURLs,
         coverPhoto: coverPhotoURL,
+        video: videoURL,
         location,
         category: Array.isArray(category) ? category : [category],
         subCategory: Array.isArray(subCategory) ? subCategory : [subCategory],
@@ -101,7 +69,6 @@ exports.createPost = [
 
       res.status(201).json({ newPost });
     } catch (error) {
-      
       console.error('Internal Server Error:', error);
       return res.status(500).json({ error: 'Internal Server Error. Please try again later.', details: error.message });
     }
@@ -111,15 +78,20 @@ exports.createPost = [
 
 
 
-// Update a post with multiple media (images and videos) and an optional cover photo upload
+//Update post
 exports.updatePost = [
-  uploadPostMedia.fields([{ name: 'media', maxCount: 5 }, { name: 'coverPhoto', maxCount: 1 }]),
+  uploadPostMedia.fields([
+    { name: 'media', maxCount: 5 },
+    { name: 'coverPhoto', maxCount: 1 },
+    { name: 'video', maxCount: 1 }
+  ]),
   async (req, res, next) => {
     const userId = req.user.id;
     const { postId } = req.params;
     const { title, description, location, category, subCategory } = req.body;
     const mediaURLs = req.files['media'] ? req.files['media'].map(file => file.path) : [];
-    const coverPhotoURL = req.files['coverPhoto'] ? req.files['coverPhoto'][0].path : null; 
+    const coverPhotoURL = req.files['coverPhoto'] ? req.files['coverPhoto'][0].path : null;
+    const videoURL = req.files['video'] ? req.files['video'][0].path : null;
 
     try {
       const post = await PostModel.findOne({ _id: postId });
@@ -139,6 +111,7 @@ exports.updatePost = [
           description,
           media: mediaURLs.length > 0 ? [...post.media, ...mediaURLs] : post.media,
           coverPhoto: coverPhotoURL || post.coverPhoto,
+          video: videoURL || post.video,
           location,
           category: Array.isArray(category) ? category : [category],
           subCategory: Array.isArray(subCategory) ? subCategory : [subCategory],
@@ -152,6 +125,7 @@ exports.updatePost = [
     }
   },
 ];
+
 
 
 
