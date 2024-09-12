@@ -68,6 +68,7 @@ const uploadPostMedia = multer({ storage: postStorage });
 
 
 
+// Create a new post with multiple media (images and videos) and an optional cover photo upload
 exports.createPost = [
   uploadPostMedia.fields([{ name: 'media', maxCount: 5 }, { name: 'coverPhoto', maxCount: 1 }]),
   async (req, res, next) => {
@@ -76,9 +77,8 @@ exports.createPost = [
     const mediaURLs = req.files['media'] ? req.files['media'].map(file => file.path) : [];
     const coverPhotoURL = req.files['coverPhoto'] ? req.files['coverPhoto'][0].path : null;
 
-    console.log('Media URLs:', mediaURLs); 
-
     try {
+      
       if (!title || !category || !subCategory) {
         return res.status(400).json({ error: 'Parameters Missing' });
       }
@@ -101,12 +101,12 @@ exports.createPost = [
 
       res.status(201).json({ newPost });
     } catch (error) {
+      
       console.error('Internal Server Error:', error);
       return res.status(500).json({ error: 'Internal Server Error. Please try again later.', details: error.message });
     }
   },
 ];
-
 
 
 
