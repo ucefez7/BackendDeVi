@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Post</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 600px;
+      background-color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      box-sizing: border-box;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 24px;
+      margin-bottom: 30px;
+      color: #333;
+      font-weight: 600;
+      padding-top: 10px;
+    }
+
+    .logo {
+      width: 120px;
+      margin-bottom: 20px;
+    }
+
+    form {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      text-align: left;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .form-group label {
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 8px;
+    }
+
+    .form-group input[type="text"], 
+    .form-group textarea, 
+    .form-group input[type="file"] {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #e1e1e1;
+      border-radius: 6px;
+      box-sizing: border-box;
+    }
+
+    .form-group textarea {
+      resize: vertical;
+      height: 100px;
+    }
+
+    .form-group input[type="checkbox"] {
+      margin-right: 8px;
+    }
+
+    .form-group button {
+      background: linear-gradient(135deg, #f58529, #dd2a7b, #8134af);
+      color: #fff;
+      border: none;
+      padding: 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      grid-column: span 2;
+      transition: background-color 0.3s ease, transform 0.2s;
+    }
+
+    .form-group button:hover {
+      opacity: 0.9;
+    }
+
+    .form-group button:active {
+      transform: scale(0.98);
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 15px;
+      }
+
+      form {
+        grid-template-columns: 1fr;
+      }
+
+      .form-group button {
+        grid-column: auto;
+      }
+    }
+    #btn1{
+      margin-left: 50%;
+      min-width: 100%;
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+  <div class="container">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png" alt="Instagram Logo" class="logo">
+    <h1>Create Post</h1>
+    <form id="postForm" enctype="multipart/form-data">
+      <div class="form-group">
+        <input type="text" id="title" name="title" placeholder="Enter the title" required>
+      </div>
+
+      <div class="form-group">
+        <textarea id="description" name="description" placeholder="Enter the description" required></textarea>
+      </div>
+
+      <div class="form-group">
+        <input type="text" id="location" name="location" placeholder="Enter the location">
+      </div>
+
+      <div class="form-group">
+        <input type="text" id="category" name="category" placeholder="Enter the category" required>
+      </div>
+
+      <div class="form-group">
+        <input type="text" id="subCategory" name="subCategory" placeholder="Enter the subcategory" required>
+      </div>
+
+      <div class="form-group">
+        <label for="coverPhoto">Blog</label>
+        <input type="checkbox" id="isBlog" name="isBlog">
+      </div>
+
+      <div class="form-group">
+        <label for="media">Media (images/videos):</label>
+        <input type="file" id="media" name="media" multiple>
+      </div>
+
+      <div class="form-group">
+        <label for="coverPhoto">Cover Photo:</label>
+        <input type="file" id="coverPhoto" name="coverPhoto">
+      </div>
+
+      <!-- <div class="form-group">
+        <label for="video">Video:</label>
+        <input type="file" id="video" name="video">
+      </div> -->
+
+      <div class="form-group" id="btn1">
+        <button type="button" onclick="submitForm()">Submit</button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    function submitForm() {
+      const form = document.getElementById('postForm');
+      const formData = new FormData(form);
+      const isBlogChecked = document.getElementById('isBlog').checked;
+
+      // Set isBlog to 'true' if checked, otherwise 'false'
+      formData.append('isBlog', isBlogChecked ? 'true' : 'false');
+
+      fetch('https://backenddevi.onrender.com/api/posts/create-post', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY2ZGMyODI2Y2VlMThjYTliYjU1MjBhNCIsImlhdCI6MTcyNjE2MjAyMywiZXhwIjoxNzI2MjQ4NDIzfQ.OXymSmuxWJaQikvsEyH44zHuTFas3lQwkDlp5-0wIE8'
+        },
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        // Display success alert
+        Swal.fire({
+          icon: 'success',
+          title: 'Success',
+          text: JSON.stringify(data),
+          confirmButtonText: 'Okay'
+        });
+      })
+      .catch((error) => {
+        // Display error alert
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: error.message,
+          confirmButtonText: 'Try Again'
+        });
+      });
+    }
+  </script>
+</body>
+</html>

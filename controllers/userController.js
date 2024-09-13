@@ -512,3 +512,79 @@ exports.getUserNotifications = async function (req, res) {
   }
 };
 
+
+
+
+
+// Block a user
+exports.blockUser = async function (req, res) {
+  try {
+    const { userIdToBlock } = req.body;
+    const currentUserId = req.user.id;
+
+    if (userIdToBlock === currentUserId) {
+      return res.status(400).json({ message: 'You cannot block yourself.' });
+    }
+    let userRelationship = await UserRelationship.findOne({ userId: currentUserId });
+
+    if (!userRelationship) {
+      userRelationship = new UserRelationship({ userId: currentUserId });
+    }
+
+    if (!userRelationship.blocked.includes(userIdToBlock)) {
+      userRelationship.blocked.push(userIdToBlock);
+      await userRelationship.save();
+      return res.status(200).json({ message: 'User blocked successfully.' });
+    }
+
+    res.status(400).json({ message: 'User is already blocked.' });
+  } catch (err) {
+    console.error('Error blocking user:', err.message);
+    res.status(500).json({ message: 'Error blocking user' });
+  }
+};
+
+
+// Get blocked users
+exports.getBlockedUsers = async function (req, res) {
+  try {
+    const currentUserId = req.user.id;
+    const userRelationship = await UserRelationship.findOne({ userId: currentUserId })
+      .populate('blocked', 'username name profileImg');
+
+    if (!userRelationship) {
+      return res.status(404).json({ message: 'No blocked users found.' });
+    }
+
+    res.status(200).json(userRelationship.blocked);
+  } catch (err) {
+    console.error('Error getting blocked users:', err.message);
+    res.status(500).json({ message: 'Error getting blocked users' });
+  }
+};
+
+
+
+
+// Unblock a user
+exports.unblockUser = async function (req, res) {
+  try {
+    const { userIdToUnblock } = req.body;
+    const currentUserId = req.user.id;
+    const userRelationship = await UserRelationship.findOne({ userId: currentUserId });
+
+    if (!userRelationship || !userRelationship.blocked.includes(userIdToUnblock)) {
+      return res.status(404).json({ message: 'User is not blocked.' });
+    }
+
+    userRelationship.blocked = userRelationship.blocked.filter(
+      (blockedUserId) => blockedUserId.toString() !== userIdToUnblock
+    );
+
+    await userRelationship.save();
+    res.status(200).json({ message: 'User unblocked successfully.' });
+  } catch (err) {
+    console.error('Error unblocking user:', err.message);
+    res.status(500).json({ message: 'Error unblocking user' });
+  }
+};

@@ -61,7 +61,7 @@ const postSchema = new Schema({
   },
   isBlog: {
     type: Boolean,
-    required: [true, 'isBlog field is required'],
+    // required: [true, 'isBlog field is required'],
   },
 }, { timestamps: true });
 

@@ -147,6 +147,24 @@ exports.updatePost = [
 
 
 
+// // Function to determine the media type of a post
+// const classifyMediaType = (post) => {
+//   if (post.isBlog) {
+//     return 'Blog';
+//   } else if (post.media && post.media.length > 0) {
+//     const videos = post.media.filter(media => media.endsWith('.mp4') || media.endsWith('.mov'));
+
+//     if (videos.length > 0) {
+//       return 'Video';
+//     } else {
+//       return 'Image';
+//     }
+//   }
+//   return 'Unknown';
+// };
+
+
+
 // Function to determine the media type of a post
 const classifyMediaType = (post) => {
   if (post.isBlog) {
@@ -159,9 +177,12 @@ const classifyMediaType = (post) => {
     } else {
       return 'Image';
     }
+  } else if (post.video) {
+    return 'Video';
   }
   return 'Unknown';
 };
+
 
 
 
@@ -459,7 +480,7 @@ exports.getSavedPosts = async (req, res, next) => {
     const savedPosts = await PostModel.find({ _id: { $in: savePost.posts } })
       .populate({
         path: 'userId',
-        select: 'username name',
+        select: 'username name profession',
       })
       .sort({ createdAt: -1 });
     
