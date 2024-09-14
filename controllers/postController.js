@@ -188,12 +188,58 @@ const classifyMediaType = (post) => {
 
 
 
-// Modified getAllPosts to include media type classification
+// // Modified getAllPosts to include media type classification
+// exports.getAllPosts = async (req, res, next) => {
+//   console.log("All posts loading...");
+  
+//   try {
+//     const posts = await PostModel.find({ isBlocked: false })
+//       .populate({
+//         path: 'userId',
+//         select: 'username name profession following followers',
+//       })
+//       .sort({ createdAt: -1 });
+
+//     if (!posts.length) {
+//       return res.status(404).json({ message: 'No posts found' });
+//     }
+
+//     const postsWithUserDetails = posts.map(post => {
+//       const user = post.userId;
+//       const mediaType = classifyMediaType(post);
+//       return {
+//         ...post.toObject(),
+//         userId: {
+//           ...user.toObject(),
+//           followingCount: user.following ? user.following.length : 0,
+//           followersCount: user.followers ? user.followers.length : 0,
+//         },
+//         mediaType: mediaType,
+//       };
+//     });
+
+//     res.status(200).json(postsWithUserDetails);
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+
+
+
+
+// Modified getAllPosts to exclude reported posts
 exports.getAllPosts = async (req, res, next) => {
   console.log("All posts loading...");
   
   try {
-    const posts = await PostModel.find({ isBlocked: false })
+    
+    const reportedPosts = await ReportPostModel.find().select('postId');
+    const reportedPostIds = reportedPosts.map(report => report.postId.toString());
+
+    const posts = await PostModel.find({ 
+        isBlocked: false,
+        _id: { $nin: reportedPostIds }
+      })
       .populate({
         path: 'userId',
         select: 'username name profession following followers',
@@ -532,12 +578,56 @@ exports.getSavedPost = async (req, res, next) => {
 
 
 
-// Get all posts by a user
+// // Get all posts by a user
+// exports.getPostsByUser = async (req, res, next) => {
+//   const { userId } = req.params;
+
+//   try {
+//     const posts = await PostModel.find({ userId, isBlocked: false })
+//       .populate({
+//         path: 'userId',
+//         select: 'username profession name',
+//       })
+//       .sort({ createdAt: -1 });
+
+//     if (!posts.length) {
+//       return res.status(404).json({ message: 'No posts found for this user' });
+//     }
+
+//     const postsWithUserDetails = posts.map(post => {
+//       const user = post.userId;
+//       const mediaType = classifyMediaType(post);
+//       return {
+//         ...post.toObject(),
+//         userId: {
+//           ...user.toObject(),
+//           followingCount: user.following ? user.following.length : 0,
+//           followersCount: user.followers ? user.followers.length : 0,
+//         },
+//         mediaType,
+//       };
+//     });
+    
+//     res.status(200).json(postsWithUserDetails);
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+
+
+// Get all posts by a user, excluding reported posts
 exports.getPostsByUser = async (req, res, next) => {
   const { userId } = req.params;
 
   try {
-    const posts = await PostModel.find({ userId, isBlocked: false })
+    const reportedPosts = await ReportPostModel.find().select('postId');
+    const reportedPostIds = reportedPosts.map(report => report.postId.toString());
+
+    const posts = await PostModel.find({
+        userId,
+        isBlocked: false,
+        _id: { $nin: reportedPostIds }
+      })
       .populate({
         path: 'userId',
         select: 'username profession name',
@@ -548,6 +638,7 @@ exports.getPostsByUser = async (req, res, next) => {
       return res.status(404).json({ message: 'No posts found for this user' });
     }
 
+    
     const postsWithUserDetails = posts.map(post => {
       const user = post.userId;
       const mediaType = classifyMediaType(post);
@@ -571,16 +662,65 @@ exports.getPostsByUser = async (req, res, next) => {
 
 
 
+// // Get posts by category with media type
+// exports.getPostsByCategory = async (req, res, next) => {
+//   const { category } = req.params;
 
-// Get posts by category with media type
+//   try {
+//     const posts = await PostModel.find({
+//       category: { $regex: new RegExp(`^${category}$`, 'i') },
+//       isBlocked: false
+//     })
+//       .populate({
+//         path: 'userId',
+//         select: 'username name profession followers following',
+//       })
+//       .populate({
+//         path: 'likes',
+//         select: 'username name',
+//       })
+//       .sort({ createdAt: -1 });
+
+//     if (!posts.length) {
+//       return res.status(404).json({ message: 'No posts found for this category' });
+//     }
+
+//     const postsWithDetails = posts.map(post => {
+//       const user = post.userId;
+//       const mediaType = classifyMediaType(post);
+//       return {
+//         ...post.toObject(),
+//         userId: {
+//           ...user.toObject(),
+//           followingCount: user.following ? user.following.length : 0,
+//           followersCount: user.followers ? user.followers.length : 0,
+//         },
+//         likes: post.likes,
+//         mediaType,
+//       };
+//     });
+
+//     res.status(200).json(postsWithDetails);
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+
+
+// Get posts by category with media type, excluding reported posts
 exports.getPostsByCategory = async (req, res, next) => {
   const { category } = req.params;
 
   try {
+    const reportedPosts = await ReportPostModel.find().select('postId');
+    const reportedPostIds = reportedPosts.map(report => report.postId.toString());
+
+   
     const posts = await PostModel.find({
-      category: { $regex: new RegExp(`^${category}$`, 'i') },
-      isBlocked: false
-    })
+        category: { $regex: new RegExp(`^${category}$`, 'i') },
+        isBlocked: false,
+        _id: { $nin: reportedPostIds } 
+      })
       .populate({
         path: 'userId',
         select: 'username name profession followers following',
@@ -595,6 +735,7 @@ exports.getPostsByCategory = async (req, res, next) => {
       return res.status(404).json({ message: 'No posts found for this category' });
     }
 
+    
     const postsWithDetails = posts.map(post => {
       const user = post.userId;
       const mediaType = classifyMediaType(post);
@@ -617,50 +758,9 @@ exports.getPostsByCategory = async (req, res, next) => {
 };
 
 
-
-
-
-
-// // Report a post
-// exports.reportPost = async (req, res, next) => {
-//   const userId = req.user.id;
-//   const { postId, reason, details } = req.body;
-//   console.log("ethalle request body: " +req.body);
-  
-
-//   try {
-
-//     const post = await PostModel.findById(postId);
-//     if (!post) {
-//       return res.status(404).json({ error: 'Post not found' });
-//     }
-
-//     const existingReport = await ReportPostModel.findOne({ postId, reportedBy: userId });
-//     if (existingReport) {
-//       return res.status(400).json({ error: 'You have already reported this post' });
-//     }
-
-//     if (!reportReasons.includes(reason)) {
-//       return res.status(400).json({ error: 'Invalid report reason' });
-//     }
-
-//     const newReport = await ReportPostModel.create({
-//       postId,
-//       reportedBy: userId,
-//       reason,
-//       details,
-//     });
-
-//     res.status(201).json({ message: 'Post reported successfully', report: newReport });
-//   } catch (error) {
-//     next(error);
-//   }
-// };
-
-
 exports.reportPost = async (req, res, next) => {
   const userId = req.user.id;
-  const postId = req.params.postId;  // Get postId from params
+  const postId = req.params.postId;  
   const { reason, details } = req.body;
   console.log("ethalle request body: " + JSON.stringify(req.body));
 
