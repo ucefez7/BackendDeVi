@@ -26,4 +26,9 @@ router.post('/posts/saved', userAuthMiddleware, postController.getSavedPosts);
 // router.post('/posts/saved/:postId',userAuthMiddleware, postController.getSavedPost);
 
 
+//Report
+router.post('/posts/report/:postId', userAuthMiddleware, postController.reportPost);
+router.delete('/posts/report/:postId', userAuthMiddleware, postController.unreportPost);
+router.post('/posts/reported-posts', userAuthMiddleware, postController.getReportedPosts);
+
 module.exports = router;

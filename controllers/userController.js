@@ -376,52 +376,6 @@ exports.signoutUser = async (req, res) => {
 
 
 
-// exports.loginUser = async function (req, res) {
-//   console.log("da mone working");
-  
-//   const { phoneNumber } = req.body;
-
-//   console.log('Incoming request to loginUser:', req.body);
-
-//   try {
-//     let user = await User.findOne({ phoneNumber });
-
-//     if (user) {
-//       console.log("User logged in: ", user);
-//       const token = signToken(user._id);
-//       const userResponse = {
-//         token,
-//         userId: user._id,
-//         userExists: true,
-//         isUser: user.isUser,
-//         isCreator: user.isCreator,
-//         isVerified: user.isVerified,
-//         name: user.name,
-//         username: user.username,
-//         gender: user.gender,
-//         dob: user.dob,
-//         phoneNumber: user.phoneNumber,
-//         mailAddress: user.mailAddress,
-//         profession: user.profession,
-//         bio: user.bio,
-//         website: user.website,
-//         profileImg: user.profileImg,
-//         createdAt: user.createdAt,
-//         updatedAt: user.updatedAt
-//       };
-
-//       return res.status(200).send(userResponse);
-//     } else {
-//       console.log('User not found');
-//       return res.status(404).json({ userExists: false, phoneNumber });
-//     }
-//   } catch (err) {
-//     console.error('Error in loginUser:', err.message);
-//     return res.status(500).json({ message: err.message });
-//   }
-// };
-
-
 exports.loginUser = async function (req, res) {
   console.log("da mone working");
   
@@ -889,3 +843,4 @@ exports.unblockUser = async function (req, res) {
     res.status(500).json({ message: 'Error unblocking user' });
   }
 };
+

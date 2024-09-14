@@ -2,6 +2,7 @@ const PostModel = require('../models/postSchema');
 const UserModel = require('../models/User');
 const CommentModel = require('../models/commentSchema');
 const SavePostModel = require('../models/savePostSchema');
+const { ReportPostModel, reportReasons } = require('../models/reportPostSchema');
 const multer = require('multer');
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const cloudinary = require('../config/cloudinaryConfig');
@@ -617,3 +618,117 @@ exports.getPostsByCategory = async (req, res, next) => {
 
 
 
+
+
+
+// // Report a post
+// exports.reportPost = async (req, res, next) => {
+//   const userId = req.user.id;
+//   const { postId, reason, details } = req.body;
+//   console.log("ethalle request body: " +req.body);
+  
+
+//   try {
+
+//     const post = await PostModel.findById(postId);
+//     if (!post) {
+//       return res.status(404).json({ error: 'Post not found' });
+//     }
+
+//     const existingReport = await ReportPostModel.findOne({ postId, reportedBy: userId });
+//     if (existingReport) {
+//       return res.status(400).json({ error: 'You have already reported this post' });
+//     }
+
+//     if (!reportReasons.includes(reason)) {
+//       return res.status(400).json({ error: 'Invalid report reason' });
+//     }
+
+//     const newReport = await ReportPostModel.create({
+//       postId,
+//       reportedBy: userId,
+//       reason,
+//       details,
+//     });
+
+//     res.status(201).json({ message: 'Post reported successfully', report: newReport });
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+
+
+exports.reportPost = async (req, res, next) => {
+  const userId = req.user.id;
+  const postId = req.params.postId;  // Get postId from params
+  const { reason, details } = req.body;
+  console.log("ethalle request body: " + JSON.stringify(req.body));
+
+  try {
+    const post = await PostModel.findById(postId);
+    if (!post) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+
+    const existingReport = await ReportPostModel.findOne({ postId, reportedBy: userId });
+    if (existingReport) {
+      return res.status(400).json({ error: 'You have already reported this post' });
+    }
+
+    if (!reportReasons.includes(reason)) {
+      return res.status(400).json({ error: 'Invalid report reason' });
+    }
+
+    const newReport = await ReportPostModel.create({
+      postId,
+      reportedBy: userId,
+      reason,
+      details,
+    });
+
+    res.status(201).json({ message: 'Post reported successfully', report: newReport });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+
+
+// Unreport a post
+exports.unreportPost = async (req, res, next) => {
+  const userId = req.user.id;
+  const { postId } = req.params;
+
+  try {
+    const report = await ReportPostModel.findOne({ postId, reportedBy: userId });
+    if (!report) {
+      return res.status(404).json({ error: 'Report not found' });
+    }
+
+    await ReportPostModel.deleteOne({ _id: report._id });
+
+    res.status(200).json({ message: 'Post unreported successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+
+// Get all reported posts by the current user
+exports.getReportedPosts = async (req, res, next) => {
+  const userId = req.user.id;
+
+  try {
+    const reports = await ReportPostModel.find({ reportedBy: userId }).populate('postId');
+
+    if (!reports.length) {
+      return res.status(404).json({ message: 'No reported posts found' });
+    }
+    const reportedPosts = reports.map(report => report.postId);
+    res.status(200).json(reportedPosts);
+  } catch (error) {
+    next(error);
+  }
+};
