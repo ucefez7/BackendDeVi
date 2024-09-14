@@ -6,7 +6,7 @@ const UserRelationshipSchema = new mongoose.Schema({
   followers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   followRequestsSent: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   followRequestsReceived: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-  blocked: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }] // New field for blocked users
+  blocked: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }] 
 });
 
 module.exports = mongoose.model('UserRelationship', UserRelationshipSchema);

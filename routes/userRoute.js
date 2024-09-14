@@ -11,7 +11,10 @@ const {
   signoutUser,
   getRelationshipStatus,
   getUserRelations,
-  getUserNotifications
+  getUserNotifications,
+  blockUser,
+  unblockUser,
+  getBlockedUsers
 } = require('../controllers/userController');
 const {
   sendFollowRequest,
@@ -57,5 +60,11 @@ router.post('/users/get-notifications', userAuthMiddleware, getUserNotifications
 router.get('/users/followers/:id', userAuthMiddleware,getFollowers);
 router.get('/users/following/:id', userAuthMiddleware, getFollowing);
 router.post('/users/cancel-follow/:id', userAuthMiddleware, cancelFollowRequest);
+
+
+//blocked status
+router.post('/users/block/:id', userAuthMiddleware, blockUser);
+router.post('/users/unblock/:id', userAuthMiddleware, unblockUser);
+router.post('/users/blocked', userAuthMiddleware, getBlockedUsers);
 
 module.exports = router;

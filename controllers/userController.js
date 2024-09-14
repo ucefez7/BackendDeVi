@@ -19,30 +19,69 @@ const storage = new CloudinaryStorage({
 
 const uploadProfileImg = multer({ storage });
 
-// Get all users
+// // Get all users
+// exports.getUsers = async function (req, res) {
+//   try {
+//     const users = await User.find();
+//     console.log("Users are here: " + users);
+
+//     const userResponses = users.map(user => ({
+//       userId: user._id,
+//       isUser: user.isUser,
+//       isCreator: user.isCreator,
+//       isVerified: user.isVerified,
+//       name: user.name,
+//       username: user.username,
+//       gender: user.gender,
+//       dob: user.dob,
+//       phoneNumber: user.phoneNumber,
+//       mailAddress: user.mailAddress,
+//       profession: user.profession,
+//       bio: user.bio,
+//       website: user.website,
+//       profileImg: user.profileImg,
+//       createdAt: user.createdAt,
+//       updatedAt: user.updatedAt
+//     }));
+
+//     res.json(userResponses);
+//   } catch (err) {
+//     res.status(500).json({ message: err.message });
+//   }
+// };
+
+
+
+// controllers/userController.js
 exports.getUsers = async function (req, res) {
   try {
     const users = await User.find();
     console.log("Users are here: " + users);
 
-    const userResponses = users.map(user => ({
-      userId: user._id,
-      isUser: user.isUser,
-      isCreator: user.isCreator,
-      isVerified: user.isVerified,
-      name: user.name,
-      username: user.username,
-      gender: user.gender,
-      dob: user.dob,
-      phoneNumber: user.phoneNumber,
-      mailAddress: user.mailAddress,
-      profession: user.profession,
-      bio: user.bio,
-      website: user.website,
-      profileImg: user.profileImg,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt
-    }));
+    
+    const currentUser = await User.findById(req.user.id);
+    const blockedUsers = currentUser ? currentUser.blockedUsers.map(id => id.toString()) : [];
+
+    const userResponses = users
+      .filter(user => !blockedUsers.includes(user._id.toString()))
+      .map(user => ({
+        userId: user._id,
+        isUser: user.isUser,
+        isCreator: user.isCreator,
+        isVerified: user.isVerified,
+        name: user.name,
+        username: user.username,
+        gender: user.gender,
+        dob: user.dob,
+        phoneNumber: user.phoneNumber,
+        mailAddress: user.mailAddress,
+        profession: user.profession,
+        bio: user.bio,
+        website: user.website,
+        profileImg: user.profileImg,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt
+      }));
 
     res.json(userResponses);
   } catch (err) {
@@ -52,19 +91,82 @@ exports.getUsers = async function (req, res) {
 
 
 
-// Get user profile by ID including followers and following
+
+
+
+// // Get user profile by ID including followers and following
+// exports.getUserById = async function (req, res) {
+//   try {
+//     const user = await User.findById(req.params.id);
+//     if (!user) return res.status(404).json({ message: 'User not found' });
+
+   
+//     const relationship = await UserRelationship.findOne({ userId: user._id })
+//       .populate('following', 'username name profileImg')
+//       .populate('followers', 'username name profileImg');
+
+//     const currentUserRelationship = await UserRelationship.findOne({ userId: req.user.id });
+    
+//     let relationshipStatus = 'none';
+//     if (currentUserRelationship) {
+//       if (currentUserRelationship.following.includes(user._id)) {
+//         relationshipStatus = 'following';
+//       }
+//       if (currentUserRelationship.followers.includes(user._id)) {
+//         relationshipStatus = 'follower';
+//       }
+//       if (currentUserRelationship.followRequestsSent.includes(user._id)) {
+//         relationshipStatus = 'requested';
+//       }
+//     }
+
+//     const userResponse = {
+//       userId: user._id,
+//       isUser: user.isUser,
+//       isCreator: user.isCreator,
+//       isVerified: user.isVerified,
+//       name: user.name,
+//       username: user.username,
+//       gender: user.gender,
+//       dob: user.dob,
+//       phoneNumber: user.phoneNumber,
+//       mailAddress: user.mailAddress,
+//       profession: user.profession,
+//       bio: user.bio,
+//       website: user.website,
+//       profileImg: user.profileImg,
+//       followers: relationship ? relationship.followers : [],
+//       following: relationship ? relationship.following : [],
+//       relationshipStatus,
+//       createdAt: user.createdAt,
+//       updatedAt: user.updatedAt
+//     };
+
+//     res.json(userResponse);
+//   } catch (err) {
+//     res.status(500).json({ message: err.message });
+//   }
+// };
+
+
+
 exports.getUserById = async function (req, res) {
   try {
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-   
+    
+    const currentUser = await User.findById(req.user.id);
+    const isBlocked = currentUser && currentUser.blockedUsers.includes(user._id.toString());
+
+    if (isBlocked) return res.status(403).json({ message: 'User is blocked' });
+
     const relationship = await UserRelationship.findOne({ userId: user._id })
       .populate('following', 'username name profileImg')
       .populate('followers', 'username name profileImg');
 
     const currentUserRelationship = await UserRelationship.findOne({ userId: req.user.id });
-    
+
     let relationshipStatus = 'none';
     if (currentUserRelationship) {
       if (currentUserRelationship.following.includes(user._id)) {
@@ -108,23 +210,94 @@ exports.getUserById = async function (req, res) {
 
 
 
-// Check relationship while searching users
+
+
+
+
+// // Check relationship while searching users
+// exports.searchUsersByName = async function (req, res) {
+//   const searchTerm = req.query.name;
+//   if (!searchTerm) {
+//     return res.status(400).json({ message: 'Name query parameter is required' });
+//   }
+
+//   // try {
+//   //   const users = await User.find({
+//   //     $or: [
+//   //       { name: { $regex: searchTerm, $options: 'i' } },
+//   //       { username: { $regex: searchTerm, $options: 'i' } }
+//   //     ]
+//   //   });
+
+
+//   try{
+//     const users = await User.find({
+//       $or: [
+//         { name: { $regex: `^${searchTerm}`, $options: 'i' } }, 
+//         { username: { $regex: `^${searchTerm}`, $options: 'i' } } 
+//       ]
+//     });
+
+    
+//     const filteredUsers = users.filter(user => user._id.toString() !== req.user.id);
+
+//     if (filteredUsers.length === 0) {
+//       return res.status(404).json({ message: 'No users found' });
+//     }
+
+    
+//     const currentUserRelationship = await UserRelationship.findOne({ userId: req.user.id });
+
+//     const userResponses = filteredUsers.map(user => {
+     
+//       let relationshipStatus = 'none';
+//       if (currentUserRelationship) {
+//         if (currentUserRelationship.following.includes(user._id)) {
+//           relationshipStatus = 'following';
+//         }
+//         if (currentUserRelationship.followers.includes(user._id)) {
+//           relationshipStatus = 'follower';
+//         }
+//         if (currentUserRelationship.followRequestsSent.includes(user._id)) {
+//           relationshipStatus = 'requested';
+//         }
+//       }
+
+//       return {
+//         userId: user._id,
+//         isUser: user.isUser,
+//         isCreator: user.isCreator,
+//         isVerified: user.isVerified,
+//         name: user.name,
+//         username: user.username,
+//         gender: user.gender,
+//         dob: user.dob,
+//         phoneNumber: user.phoneNumber,
+//         mailAddress: user.mailAddress,
+//         profession: user.profession,
+//         bio: user.bio,
+//         website: user.website,
+//         profileImg: user.profileImg,
+//         relationshipStatus,
+//         createdAt: user.createdAt,
+//         updatedAt: user.updatedAt
+//       };
+//     });
+
+//     res.json(userResponses);
+//   } catch (err) {
+//     res.status(500).json({ message: err.message });
+//   }
+// };
+
+
 exports.searchUsersByName = async function (req, res) {
   const searchTerm = req.query.name;
   if (!searchTerm) {
     return res.status(400).json({ message: 'Name query parameter is required' });
   }
 
-  // try {
-  //   const users = await User.find({
-  //     $or: [
-  //       { name: { $regex: searchTerm, $options: 'i' } },
-  //       { username: { $regex: searchTerm, $options: 'i' } }
-  //     ]
-  //   });
-
-
-  try{
+  try {
     const users = await User.find({
       $or: [
         { name: { $regex: `^${searchTerm}`, $options: 'i' } }, 
@@ -132,18 +305,19 @@ exports.searchUsersByName = async function (req, res) {
       ]
     });
 
-    
-    const filteredUsers = users.filter(user => user._id.toString() !== req.user.id);
+    const currentUser = await User.findById(req.user.id);
+    const blockedUsers = currentUser ? currentUser.blockedUsers.map(id => id.toString()) : [];
+
+    const filteredUsers = users
+      .filter(user => !blockedUsers.includes(user._id.toString()) && user._id.toString() !== req.user.id);
 
     if (filteredUsers.length === 0) {
       return res.status(404).json({ message: 'No users found' });
     }
 
-    
     const currentUserRelationship = await UserRelationship.findOne({ userId: req.user.id });
 
     const userResponses = filteredUsers.map(user => {
-     
       let relationshipStatus = 'none';
       if (currentUserRelationship) {
         if (currentUserRelationship.following.includes(user._id)) {
@@ -202,6 +376,52 @@ exports.signoutUser = async (req, res) => {
 
 
 
+// exports.loginUser = async function (req, res) {
+//   console.log("da mone working");
+  
+//   const { phoneNumber } = req.body;
+
+//   console.log('Incoming request to loginUser:', req.body);
+
+//   try {
+//     let user = await User.findOne({ phoneNumber });
+
+//     if (user) {
+//       console.log("User logged in: ", user);
+//       const token = signToken(user._id);
+//       const userResponse = {
+//         token,
+//         userId: user._id,
+//         userExists: true,
+//         isUser: user.isUser,
+//         isCreator: user.isCreator,
+//         isVerified: user.isVerified,
+//         name: user.name,
+//         username: user.username,
+//         gender: user.gender,
+//         dob: user.dob,
+//         phoneNumber: user.phoneNumber,
+//         mailAddress: user.mailAddress,
+//         profession: user.profession,
+//         bio: user.bio,
+//         website: user.website,
+//         profileImg: user.profileImg,
+//         createdAt: user.createdAt,
+//         updatedAt: user.updatedAt
+//       };
+
+//       return res.status(200).send(userResponse);
+//     } else {
+//       console.log('User not found');
+//       return res.status(404).json({ userExists: false, phoneNumber });
+//     }
+//   } catch (err) {
+//     console.error('Error in loginUser:', err.message);
+//     return res.status(500).json({ message: err.message });
+//   }
+// };
+
+
 exports.loginUser = async function (req, res) {
   console.log("da mone working");
   
@@ -235,8 +455,7 @@ exports.loginUser = async function (req, res) {
         createdAt: user.createdAt,
         updatedAt: user.updatedAt
       };
-
-      return res.status(200).send(userResponse);
+    return res.status(200).send(userResponse);
     } else {
       console.log('User not found');
       return res.status(404).json({ userExists: false, phoneNumber });
@@ -442,14 +661,85 @@ exports.getUserRelations = async function(req, res) {
 
 
 
+// exports.getUserNotifications = async function (req, res) {
+//   try {
+//     const userId = req.user.id;
+//     console.log(`Fetching notifications for userId: ${userId}`);
+
+//     const userRelationship = await UserRelationship.findOne({ userId });
+
+//     console.log('UserRelationship:', userRelationship);
+
+//     if (!userRelationship) {
+//       return res.status(404).json({ message: 'User relationships not found' });
+//     }
+
+//     const followRequestsReceived = await User.find({
+//       _id: { $in: userRelationship.followRequestsReceived },
+//     }).select('name username profileImg isCreator');
+
+//     console.log('Follow Requests Received Users:', followRequestsReceived);
+
+//     const followers = await User.find({
+//       _id: { $in: userRelationship.followers },
+//     }).select('name username profileImg isCreator');
+
+//     console.log('Followers:', followers);
+
+//     const notifications = [];
+
+//     followRequestsReceived.forEach((user) => {
+//       notifications.push({
+//         type: 'follow_request_received',
+//         userId: user._id,
+//         name: user.name,
+//         username: user.username,
+//         profileImg: user.profileImg,
+//         message: `${user.username} has sent you a follow request.`,
+//         createdAt: new Date(), 
+//         followed: false,
+//       });
+//     });
+
+//     followers.forEach((user) => {
+//       const isAcceptedRequest = !userRelationship.followRequestsReceived.includes(
+//         user._id.toString()
+//       );
+
+//       if (isAcceptedRequest) {
+//         notifications.push({
+//           type: 'follow_request_accepted',
+//           userId: user._id,
+//           name: user.name,
+//           username: user.username,
+//           profileImg: user.profileImg,
+//           message: `${user.username} has accepted your follow request.`,
+//           createdAt: new Date(), 
+//           followed: user.isCreator,
+//         });
+//       }
+//     });
+
+//     notifications.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    
+//     console.log('Notifications:', notifications);
+
+//     res.status(200).json({ notifications });
+//   } catch (error) {
+//     console.error('Error fetching notifications:', error);
+//     res.status(500).json({ message: 'Server error' });
+//   }
+// };
+
+
+
 exports.getUserNotifications = async function (req, res) {
   try {
     const userId = req.user.id;
     console.log(`Fetching notifications for userId: ${userId}`);
 
     const userRelationship = await UserRelationship.findOne({ userId });
-
-    console.log('UserRelationship:', userRelationship);
+    const blockedUsers = userRelationship ? userRelationship.blocked : [];
 
     if (!userRelationship) {
       return res.status(404).json({ message: 'User relationships not found' });
@@ -459,45 +749,43 @@ exports.getUserNotifications = async function (req, res) {
       _id: { $in: userRelationship.followRequestsReceived },
     }).select('name username profileImg isCreator');
 
-    console.log('Follow Requests Received Users:', followRequestsReceived);
-
     const followers = await User.find({
       _id: { $in: userRelationship.followers },
     }).select('name username profileImg isCreator');
 
-    console.log('Followers:', followers);
-
     const notifications = [];
 
     followRequestsReceived.forEach((user) => {
-      notifications.push({
-        type: 'follow_request_received',
-        userId: user._id,
-        name: user.name,
-        username: user.username,
-        profileImg: user.profileImg,
-        message: `${user.username} has sent you a follow request.`,
-        createdAt: new Date(), 
-        followed: false,
-      });
-    });
-
-    followers.forEach((user) => {
-      const isAcceptedRequest = !userRelationship.followRequestsReceived.includes(
-        user._id.toString()
-      );
-
-      if (isAcceptedRequest) {
+      if (!blockedUsers.includes(user._id.toString())) {
         notifications.push({
-          type: 'follow_request_accepted',
+          type: 'follow_request_received',
           userId: user._id,
           name: user.name,
           username: user.username,
           profileImg: user.profileImg,
-          message: `${user.username} has accepted your follow request.`,
-          createdAt: new Date(), 
-          followed: user.isCreator,
+          message: `${user.username} has sent you a follow request.`,
+          createdAt: new Date(),
+          followed: false,
         });
+      }
+    });
+
+    followers.forEach((user) => {
+      if (!blockedUsers.includes(user._id.toString())) {
+        const isAcceptedRequest = !userRelationship.followRequestsReceived.includes(user._id.toString());
+
+        if (isAcceptedRequest) {
+          notifications.push({
+            type: 'follow_request_accepted',
+            userId: user._id,
+            name: user.name,
+            username: user.username,
+            profileImg: user.profileImg,
+            message: `${user.username} has accepted your follow request.`,
+            createdAt: new Date(),
+            followed: user.isCreator,
+          });
+        }
       }
     });
 
@@ -515,25 +803,30 @@ exports.getUserNotifications = async function (req, res) {
 
 
 
-
 // Block a user
 exports.blockUser = async function (req, res) {
   try {
-    const { userIdToBlock } = req.body;
+    const userIdToBlock = await User.findById(req.params.id);
+    //const userIdToBlock = req.params.id;
     const currentUserId = req.user.id;
+    console.log("block chyanna user evana "+req.body);
+    console.log("eth njaana "+req.user.id);
+    
+    
 
     if (userIdToBlock === currentUserId) {
       return res.status(400).json({ message: 'You cannot block yourself.' });
     }
-    let userRelationship = await UserRelationship.findOne({ userId: currentUserId });
 
-    if (!userRelationship) {
-      userRelationship = new UserRelationship({ userId: currentUserId });
+    const currentUser = await User.findById(currentUserId);
+
+    if (!currentUser) {
+      return res.status(404).json({ message: 'Current user not found.' });
     }
 
-    if (!userRelationship.blocked.includes(userIdToBlock)) {
-      userRelationship.blocked.push(userIdToBlock);
-      await userRelationship.save();
+    if (!currentUser.blockedUsers.includes(userIdToBlock)) {
+      currentUser.blockedUsers.push(userIdToBlock);
+      await currentUser.save();
       return res.status(200).json({ message: 'User blocked successfully.' });
     }
 
@@ -545,18 +838,20 @@ exports.blockUser = async function (req, res) {
 };
 
 
+
 // Get blocked users
 exports.getBlockedUsers = async function (req, res) {
   try {
     const currentUserId = req.user.id;
-    const userRelationship = await UserRelationship.findOne({ userId: currentUserId })
-      .populate('blocked', 'username name profileImg');
+    const currentUser = await User.findById(currentUserId).populate('blockedUsers', 'username name profileImg');
+    console.log("Evanmare alle ni block akkye "+currentUser);
+    
 
-    if (!userRelationship) {
+    if (!currentUser || currentUser.blockedUsers.length === 0) {
       return res.status(404).json({ message: 'No blocked users found.' });
     }
 
-    res.status(200).json(userRelationship.blocked);
+    res.status(200).json(currentUser.blockedUsers);
   } catch (err) {
     console.error('Error getting blocked users:', err.message);
     res.status(500).json({ message: 'Error getting blocked users' });
@@ -566,22 +861,26 @@ exports.getBlockedUsers = async function (req, res) {
 
 
 
+
+
 // Unblock a user
 exports.unblockUser = async function (req, res) {
   try {
-    const { userIdToUnblock } = req.body;
+    //const userIdToUnblock = await User.findById(req.params.id);
+    const userIdToUnblock = req.params.id;
     const currentUserId = req.user.id;
-    const userRelationship = await UserRelationship.findOne({ userId: currentUserId });
 
-    if (!userRelationship || !userRelationship.blocked.includes(userIdToUnblock)) {
+    const currentUser = await User.findById(currentUserId);
+
+    if (!currentUser || !currentUser.blockedUsers.includes(userIdToUnblock)) {
       return res.status(404).json({ message: 'User is not blocked.' });
     }
 
-    userRelationship.blocked = userRelationship.blocked.filter(
-      (blockedUserId) => blockedUserId.toString() !== userIdToUnblock
+    currentUser.blockedUsers = currentUser.blockedUsers.filter(
+      (blockedUserId) => blockedUserId && blockedUserId.toString() !== userIdToUnblock
     );
 
-    await userRelationship.save();
+    await currentUser.save();
     res.status(200).json({ message: 'User unblocked successfully.' });
   } catch (err) {
     console.error('Error unblocking user:', err.message);
