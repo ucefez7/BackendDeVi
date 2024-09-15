@@ -3,6 +3,7 @@ const UserModel = require('../models/User');
 const CommentModel = require('../models/commentSchema');
 const SavePostModel = require('../models/savePostSchema');
 const { ReportPostModel, reportReasons } = require('../models/reportPostSchema');
+const NotInterestedModel = require('../models/notInterestedSchema');
 const multer = require('multer');
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const cloudinary = require('../config/cloudinaryConfig');
@@ -188,12 +189,21 @@ const classifyMediaType = (post) => {
 
 
 
-// // Modified getAllPosts to include media type classification
+
+
+// // Modified getAllPosts to exclude reported posts
 // exports.getAllPosts = async (req, res, next) => {
 //   console.log("All posts loading...");
   
 //   try {
-//     const posts = await PostModel.find({ isBlocked: false })
+    
+//     const reportedPosts = await ReportPostModel.find().select('postId');
+//     const reportedPostIds = reportedPosts.map(report => report.postId.toString());
+
+//     const posts = await PostModel.find({ 
+//         isBlocked: false,
+//         _id: { $nin: reportedPostIds }
+//       })
 //       .populate({
 //         path: 'userId',
 //         select: 'username name profession following followers',
@@ -226,9 +236,9 @@ const classifyMediaType = (post) => {
 
 
 
-
-// Modified getAllPosts to exclude reported posts
+//getAllPosts to exclude reported posts and "Not Interested" posts
 exports.getAllPosts = async (req, res, next) => {
+  const userId = req.user.id;
   console.log("All posts loading...");
   
   try {
@@ -236,9 +246,14 @@ exports.getAllPosts = async (req, res, next) => {
     const reportedPosts = await ReportPostModel.find().select('postId');
     const reportedPostIds = reportedPosts.map(report => report.postId.toString());
 
+    const notInterestedPosts = await NotInterestedModel.find({ userId }).select('postId');
+    const notInterestedPostIds = notInterestedPosts.map(item => item.postId.toString());
+    const excludedPostIds = [...reportedPostIds, ...notInterestedPostIds];
+
+    
     const posts = await PostModel.find({ 
         isBlocked: false,
-        _id: { $nin: reportedPostIds }
+        _id: { $nin: excludedPostIds }
       })
       .populate({
         path: 'userId',
@@ -269,9 +284,6 @@ exports.getAllPosts = async (req, res, next) => {
     next(error);
   }
 };
-
-
-
 
 
 
@@ -456,14 +468,14 @@ exports.unlikePost = async (req, res, next) => {
 
 
 
-// Save a Post
+// Save a Post 
 exports.savePost = async (req, res, next) => {
   const userId = req.user.id;
   const { postId } = req.params;
 
   try {
+   
     const post = await PostModel.findById(postId);
-    
     if (!post) {
       throw createHttpError(404, 'Post not found');
     }
@@ -474,8 +486,9 @@ exports.savePost = async (req, res, next) => {
       savePost = await SavePostModel.create({ userId, posts: [postId] });
     } else {
       if (savePost.posts.includes(postId)) {
-        throw createHttpError(400, 'Post is already saved');
+        return res.status(400).json({ message: 'Post is already saved' });
       }
+
       savePost.posts.push(postId);
       await savePost.save();
     }
@@ -485,6 +498,7 @@ exports.savePost = async (req, res, next) => {
     next(error);
   }
 };
+
 
 // Remove a Post from Saved Posts
 exports.removeSavedPost = async (req, res, next) => {
@@ -577,44 +591,6 @@ exports.getSavedPost = async (req, res, next) => {
 
 
 
-
-// // Get all posts by a user
-// exports.getPostsByUser = async (req, res, next) => {
-//   const { userId } = req.params;
-
-//   try {
-//     const posts = await PostModel.find({ userId, isBlocked: false })
-//       .populate({
-//         path: 'userId',
-//         select: 'username profession name',
-//       })
-//       .sort({ createdAt: -1 });
-
-//     if (!posts.length) {
-//       return res.status(404).json({ message: 'No posts found for this user' });
-//     }
-
-//     const postsWithUserDetails = posts.map(post => {
-//       const user = post.userId;
-//       const mediaType = classifyMediaType(post);
-//       return {
-//         ...post.toObject(),
-//         userId: {
-//           ...user.toObject(),
-//           followingCount: user.following ? user.following.length : 0,
-//           followersCount: user.followers ? user.followers.length : 0,
-//         },
-//         mediaType,
-//       };
-//     });
-    
-//     res.status(200).json(postsWithUserDetails);
-//   } catch (error) {
-//     next(error);
-//   }
-// };
-
-
 // Get all posts by a user, excluding reported posts
 exports.getPostsByUser = async (req, res, next) => {
   const { userId } = req.params;
@@ -661,16 +637,20 @@ exports.getPostsByUser = async (req, res, next) => {
 
 
 
-
-// // Get posts by category with media type
+// // Get posts by category with media type, excluding reported posts
 // exports.getPostsByCategory = async (req, res, next) => {
 //   const { category } = req.params;
 
 //   try {
+//     const reportedPosts = await ReportPostModel.find().select('postId');
+//     const reportedPostIds = reportedPosts.map(report => report.postId.toString());
+
+   
 //     const posts = await PostModel.find({
-//       category: { $regex: new RegExp(`^${category}$`, 'i') },
-//       isBlocked: false
-//     })
+//         category: { $regex: new RegExp(`^${category}$`, 'i') },
+//         isBlocked: false,
+//         _id: { $nin: reportedPostIds } 
+//       })
 //       .populate({
 //         path: 'userId',
 //         select: 'username name profession followers following',
@@ -685,6 +665,7 @@ exports.getPostsByUser = async (req, res, next) => {
 //       return res.status(404).json({ message: 'No posts found for this category' });
 //     }
 
+    
 //     const postsWithDetails = posts.map(post => {
 //       const user = post.userId;
 //       const mediaType = classifyMediaType(post);
@@ -707,19 +688,25 @@ exports.getPostsByUser = async (req, res, next) => {
 // };
 
 
-// Get posts by category with media type, excluding reported posts
+
+// Get posts by category with media type, excluding reported posts and "Not Interested" posts
 exports.getPostsByCategory = async (req, res, next) => {
   const { category } = req.params;
+  const userId = req.user.id;
 
   try {
+   
     const reportedPosts = await ReportPostModel.find().select('postId');
     const reportedPostIds = reportedPosts.map(report => report.postId.toString());
+    const notInterestedPosts = await NotInterestedModel.find({ userId }).select('postId');
+    const notInterestedPostIds = notInterestedPosts.map(notInterested => notInterested.postId.toString());
+    const excludedPostIds = [...reportedPostIds, ...notInterestedPostIds];
 
-   
+    
     const posts = await PostModel.find({
         category: { $regex: new RegExp(`^${category}$`, 'i') },
         isBlocked: false,
-        _id: { $nin: reportedPostIds } 
+        _id: { $nin: excludedPostIds },
       })
       .populate({
         path: 'userId',
@@ -735,10 +722,11 @@ exports.getPostsByCategory = async (req, res, next) => {
       return res.status(404).json({ message: 'No posts found for this category' });
     }
 
-    
+   
     const postsWithDetails = posts.map(post => {
       const user = post.userId;
       const mediaType = classifyMediaType(post);
+
       return {
         ...post.toObject(),
         userId: {
@@ -750,12 +738,13 @@ exports.getPostsByCategory = async (req, res, next) => {
         mediaType,
       };
     });
-
     res.status(200).json(postsWithDetails);
   } catch (error) {
     next(error);
   }
 };
+
+
 
 
 exports.reportPost = async (req, res, next) => {
@@ -829,6 +818,83 @@ exports.getReportedPosts = async (req, res, next) => {
     const reportedPosts = reports.map(report => report.postId);
     res.status(200).json(reportedPosts);
   } catch (error) {
+    next(error);
+  }
+};
+
+
+
+
+
+
+
+
+// Mark post as Not Interested
+exports.markAsNotInterested = async (req, res, next) => {
+  const userId = req.user.id;
+  //const { postId, reason } = req.body;
+  const { postId} = req.params;
+  const { reason } = req.body;
+  console.log("Ethalle Id: "+req.params);
+  
+
+  try {
+    const post = await PostModel.findById(postId);
+    if (!post) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+    const existingEntry = await NotInterestedModel.findOne({ userId, postId });
+    if (existingEntry) {
+      return res.status(400).json({ message: 'Post already marked as Not Interested' });
+    }
+
+    const newNotInterested = new NotInterestedModel({
+      userId,
+      postId,
+      reason,
+    });
+
+    await newNotInterested.save();
+    res.status(201).json({ message: 'Post marked as Not Interested successfully' });
+  } catch (error) {
+    console.error(error);
+    next(error);
+  }
+};
+
+
+// Get posts marked as Not Interested by user
+exports.getNotInterestedPosts = async (req, res, next) => {
+  const userId = req.user.id;
+
+  try {
+    const notInterestedPosts = await NotInterestedModel.find({ userId })
+      .populate('postId', 'title description media')
+      .populate('userId', 'username name');
+
+    res.status(200).json(notInterestedPosts);
+  } catch (error) {
+    console.error(error);
+    next(error);
+  }
+};
+
+
+// Remove post from Not Interested list
+exports.removeNotInterested = async (req, res, next) => {
+  const userId = req.user.id;
+  const { postId } = req.params;
+  console.log("Ethalle Id: "+req.params);
+
+  try {
+    const post = await NotInterestedModel.findOneAndDelete({ userId, postId });
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found in Not Interested list' });
+    }
+
+    res.status(200).json({ message: 'Post removed from Not Interested list' });
+  } catch (error) {
+    console.error(error);
     next(error);
   }
 };

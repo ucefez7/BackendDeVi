@@ -31,4 +31,10 @@ router.post('/posts/report/:postId', userAuthMiddleware, postController.reportPo
 router.delete('/posts/report/:postId', userAuthMiddleware, postController.unreportPost);
 router.post('/posts/reported-posts', userAuthMiddleware, postController.getReportedPosts);
 
+
+// Routes for Not Interested functionality
+router.post('/posts/not-interested/:postId', userAuthMiddleware, postController.markAsNotInterested);
+router.post('/posts/not-interested', userAuthMiddleware, postController.getNotInterestedPosts);
+router.delete('/posts/not-interested/:postId', userAuthMiddleware, postController.removeNotInterested);
+
 module.exports = router;
