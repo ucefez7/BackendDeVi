@@ -241,26 +241,21 @@ exports.getAllPosts = async (req, res, next) => {
   console.log("All posts loading...");
   
   try {
-    // Get all reported posts
+   
     const reportedPosts = await ReportPostModel.find().select('postId');
     const reportedPostIds = reportedPosts.map(report => report.postId.toString());
-
-    // Get all "Not Interested" posts for the user
     const notInterestedPosts = await NotInterestedModel.find({ userId }).select('postId');
     const notInterestedPostIds = notInterestedPosts.map(item => item.postId.toString());
-
-    // Fetch the `userId`s of the users whose posts were marked "Not Interested"
     const notInterestedPostUsers = await PostModel.find({ _id: { $in: notInterestedPostIds } }).select('userId');
     const notInterestedUserIds = notInterestedPostUsers.map(post => post.userId.toString());
 
-    // Combine both reported and "Not Interested" post IDs to exclude specific posts and exclude all posts from the "Not Interested" users
     const excludedPostIds = [...reportedPostIds, ...notInterestedPostIds];
 
-    // Fetch posts excluding reported, "Not Interested" posts, and all posts from the "Not Interested" users
+    
     const posts = await PostModel.find({
         isBlocked: false,
         _id: { $nin: excludedPostIds },
-        userId: { $nin: notInterestedUserIds }, // Exclude all posts from "Not Interested" users
+        userId: { $nin: notInterestedUserIds },
       })
       .populate({
         path: 'userId',
@@ -268,12 +263,12 @@ exports.getAllPosts = async (req, res, next) => {
       })
       .sort({ createdAt: -1 });
 
-    // If no posts found
+  
     if (!posts.length) {
       return res.status(404).json({ message: 'No posts found' });
     }
 
-    // Format the posts with user details and media type
+ 
     const postsWithUserDetails = posts.map(post => {
       const user = post.userId;
       const mediaType = classifyMediaType(post);
@@ -705,27 +700,23 @@ exports.getPostsByCategory = async (req, res, next) => {
   const userId = req.user.id;
 
   try {
-    // Get all reported posts
+    
     const reportedPosts = await ReportPostModel.find().select('postId');
     const reportedPostIds = reportedPosts.map(report => report.postId.toString());
-
-    // Get all "Not Interested" posts for the user
     const notInterestedPosts = await NotInterestedModel.find({ userId }).select('postId');
     const notInterestedPostIds = notInterestedPosts.map(notInterested => notInterested.postId.toString());
-
-    // Fetch the `userId`s of the users whose posts were marked "Not Interested"
     const notInterestedPostUsers = await PostModel.find({ _id: { $in: notInterestedPostIds } }).select('userId');
     const notInterestedUserIds = notInterestedPostUsers.map(post => post.userId.toString());
 
-    // Combine both reported and "Not Interested" post IDs to exclude specific posts and exclude all posts from the "Not Interested" users
+   
     const excludedPostIds = [...reportedPostIds, ...notInterestedPostIds];
 
-    // Fetch posts by category excluding reported, "Not Interested" posts, and all posts from the "Not Interested" users
+    
     const posts = await PostModel.find({
         category: { $regex: new RegExp(`^${category}$`, 'i') },
         isBlocked: false,
         _id: { $nin: excludedPostIds },
-        userId: { $nin: notInterestedUserIds }, // Exclude all posts from "Not Interested" users
+        userId: { $nin: notInterestedUserIds },
       })
       .populate({
         path: 'userId',
@@ -737,12 +728,12 @@ exports.getPostsByCategory = async (req, res, next) => {
       })
       .sort({ createdAt: -1 });
 
-    // If no posts found for this category
+   
     if (!posts.length) {
       return res.status(404).json({ message: 'No posts found for this category' });
     }
 
-    // Format the posts with user details, likes, and media type
+ 
     const postsWithDetails = posts.map(post => {
       const user = post.userId;
       const mediaType = classifyMediaType(post);
