@@ -15,7 +15,7 @@ const notInterestedSchema = new Schema({
   reason: {
     type: String,
     enum: ['Spam', 'Not relevant', 'Offensive', 'Other'],
-    //required: true,
+    // required: true,
   },
   createdAt: {
     type: Date,
