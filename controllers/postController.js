@@ -72,7 +72,6 @@ exports.createPost = [
         isBlog,
       });
 
-      // Fetch user details including profession
       const user = await UserModel.findById(userId).select('name username following followers profession');
       res.status(201).json({
         ...newPost.toObject(),
@@ -150,6 +149,57 @@ exports.createPost = [
 
 
 
+// // Update post
+// exports.updatePost = [
+//   uploadPostMedia.fields([
+//     { name: 'media', maxCount: 5 },
+//     { name: 'coverPhoto', maxCount: 1 },
+//     { name: 'video', maxCount: 1 }
+//   ]),
+//   async (req, res, next) => {
+//     const userId = req.user.id;
+//     const { postId } = req.params;
+//     const { title, description, location, category, subCategory } = req.body;
+
+//     try {
+//       const post = await PostModel.findOne({ _id: postId });
+
+//       if (!post) {
+//         throw createHttpError(404, 'Post not found');
+//       }
+
+//       if (post.userId.toString() !== userId) {
+//         throw createHttpError(401, "This post doesn't belong to this user");
+//       }
+
+//       const updatedPost = await PostModel.findByIdAndUpdate(
+//         postId,
+//         {
+//           title,
+//           description,
+//           location,
+//           category: Array.isArray(category) ? category : [category],
+//           subCategory: Array.isArray(subCategory) ? subCategory : [subCategory],
+//         },
+//         { new: true }
+//       ).populate('userId', 'username name profession following followers');
+
+//       res.status(200).json({
+//         ...updatedPost.toObject(),
+//         userId: {
+//           ...updatedPost.userId.toObject(),
+//           followingCount: updatedPost.userId.following ? updatedPost.userId.following.length : 0,
+//           followersCount: updatedPost.userId.followers ? updatedPost.userId.followers.length : 0,
+//         },
+//       });
+//     } catch (error) {
+//       next(error);
+//     }
+//   },
+// ];
+
+
+
 // Update post
 exports.updatePost = [
   uploadPostMedia.fields([
@@ -161,6 +211,7 @@ exports.updatePost = [
     const userId = req.user.id;
     const { postId } = req.params;
     const { title, description, location, category, subCategory } = req.body;
+    const coverPhotoURL = req.files['coverPhoto'] ? req.files['coverPhoto'][0].path : null;
 
     try {
       const post = await PostModel.findOne({ _id: postId });
@@ -181,6 +232,7 @@ exports.updatePost = [
           location,
           category: Array.isArray(category) ? category : [category],
           subCategory: Array.isArray(subCategory) ? subCategory : [subCategory],
+          coverPhoto: coverPhotoURL || post.coverPhoto,
         },
         { new: true }
       ).populate('userId', 'username name profession following followers');
@@ -198,6 +250,7 @@ exports.updatePost = [
     }
   },
 ];
+
 
 
 
