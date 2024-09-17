@@ -93,7 +93,7 @@ exports.createPost = [
 
 
 
-// // Update post
+// // Update post (eth avishyam ullath ann)
 // exports.updatePost = [
 //   uploadPostMedia.fields([
 //     { name: 'media', maxCount: 5 },
