@@ -47,8 +47,11 @@ exports.createPost = [
     const videoURL = req.files['video'] ? req.files['video'][0].path : null;
 
     try {
-      if (!title || !category || !subCategory) {
-        return res.status(400).json({ error: 'Parameters Missing' });
+      // if (!title || !category || !subCategory) {
+      //   return res.status(400).json({ error: 'Parameters Missing' });
+      // }
+      if (!title) {
+        return res.status(400).json({ error: 'Title Parameter Missing' });
       }
 
       const newPost = await PostModel.create({
@@ -643,56 +646,6 @@ exports.getPostsByUser = async (req, res, next) => {
 
 
 
-// // Get posts by category with media type, excluding reported posts
-// exports.getPostsByCategory = async (req, res, next) => {
-//   const { category } = req.params;
-
-//   try {
-//     const reportedPosts = await ReportPostModel.find().select('postId');
-//     const reportedPostIds = reportedPosts.map(report => report.postId.toString());
-
-   
-//     const posts = await PostModel.find({
-//         category: { $regex: new RegExp(`^${category}$`, 'i') },
-//         isBlocked: false,
-//         _id: { $nin: reportedPostIds } 
-//       })
-//       .populate({
-//         path: 'userId',
-//         select: 'username name profession followers following',
-//       })
-//       .populate({
-//         path: 'likes',
-//         select: 'username name',
-//       })
-//       .sort({ createdAt: -1 });
-
-//     if (!posts.length) {
-//       return res.status(404).json({ message: 'No posts found for this category' });
-//     }
-
-    
-//     const postsWithDetails = posts.map(post => {
-//       const user = post.userId;
-//       const mediaType = classifyMediaType(post);
-//       return {
-//         ...post.toObject(),
-//         userId: {
-//           ...user.toObject(),
-//           followingCount: user.following ? user.following.length : 0,
-//           followersCount: user.followers ? user.followers.length : 0,
-//         },
-//         likes: post.likes,
-//         mediaType,
-//       };
-//     });
-
-//     res.status(200).json(postsWithDetails);
-//   } catch (error) {
-//     next(error);
-//   }
-// };
-
 
 
 exports.getPostsByCategory = async (req, res, next) => {
@@ -844,7 +797,6 @@ exports.getReportedPosts = async (req, res, next) => {
 // Mark post as Not Interested
 exports.markAsNotInterested = async (req, res, next) => {
   const userId = req.user.id;
-  //const { postId, reason } = req.body;
   const { postId} = req.params;
   const { reason } = req.body;
   console.log("Ethalle Id: "+req.params);
@@ -879,10 +831,22 @@ exports.markAsNotInterested = async (req, res, next) => {
 exports.getNotInterestedPosts = async (req, res, next) => {
   const userId = req.user.id;
 
+  // try {
+  //   const notInterestedPosts = await NotInterestedModel.find({ userId })
+  //     .populate('postId', 'title description media')
+  //     .populate('userId', 'username name');
+
   try {
     const notInterestedPosts = await NotInterestedModel.find({ userId })
-      .populate('postId', 'title description media')
-      .populate('userId', 'username name');
+      .populate({
+        path: 'postId',
+        select: 'title description media video coverPhoto', 
+        populate: {
+          path: 'userId', 
+          select: 'username name profileImg',
+        }
+      });
+
 
     res.status(200).json(notInterestedPosts);
   } catch (error) {
@@ -890,6 +854,8 @@ exports.getNotInterestedPosts = async (req, res, next) => {
     next(error);
   }
 };
+
+
 
 
 // Remove post from Not Interested list
