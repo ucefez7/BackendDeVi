@@ -349,7 +349,7 @@ exports.getAllPosts = async (req, res, next) => {
       })
       .populate({
         path: 'userId',
-        select: 'username name profession following followers',
+        select: 'username name profession following followers profileImg',
       })
       .sort({ createdAt: -1 });
 
@@ -392,7 +392,7 @@ exports.getPostById = async (req, res, next) => {
     const post = await PostModel.findById(postId)
       .populate({
         path: 'userId',
-        select: 'username name profession following followers',
+        select: 'username name profession following followers profileImg',
       });
 
     if (!post) {
@@ -702,7 +702,7 @@ exports.getPostsByUser = async (req, res, next) => {
       })
       .populate({
         path: 'userId',
-        select: 'username profession name',
+        select: 'username profession name profileImg',
       })
       .sort({ createdAt: -1 });
 
@@ -760,7 +760,7 @@ exports.getPostsByCategory = async (req, res, next) => {
       })
       .populate({
         path: 'userId',
-        select: 'username name profession followers following',
+        select: 'username name profession followers following profileImg',
       })
       .populate({
         path: 'likes',

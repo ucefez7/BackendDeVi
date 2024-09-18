@@ -19,37 +19,6 @@ const storage = new CloudinaryStorage({
 
 const uploadProfileImg = multer({ storage });
 
-// // Get all users
-// exports.getUsers = async function (req, res) {
-//   try {
-//     const users = await User.find();
-//     console.log("Users are here: " + users);
-
-//     const userResponses = users.map(user => ({
-//       userId: user._id,
-//       isUser: user.isUser,
-//       isCreator: user.isCreator,
-//       isVerified: user.isVerified,
-//       name: user.name,
-//       username: user.username,
-//       gender: user.gender,
-//       dob: user.dob,
-//       phoneNumber: user.phoneNumber,
-//       mailAddress: user.mailAddress,
-//       profession: user.profession,
-//       bio: user.bio,
-//       website: user.website,
-//       profileImg: user.profileImg,
-//       createdAt: user.createdAt,
-//       updatedAt: user.updatedAt
-//     }));
-
-//     res.json(userResponses);
-//   } catch (err) {
-//     res.status(500).json({ message: err.message });
-//   }
-// };
-
 
 
 // controllers/userController.js
@@ -88,65 +57,6 @@ exports.getUsers = async function (req, res) {
     res.status(500).json({ message: err.message });
   }
 };
-
-
-
-
-
-
-// // Get user profile by ID including followers and following
-// exports.getUserById = async function (req, res) {
-//   try {
-//     const user = await User.findById(req.params.id);
-//     if (!user) return res.status(404).json({ message: 'User not found' });
-
-   
-//     const relationship = await UserRelationship.findOne({ userId: user._id })
-//       .populate('following', 'username name profileImg')
-//       .populate('followers', 'username name profileImg');
-
-//     const currentUserRelationship = await UserRelationship.findOne({ userId: req.user.id });
-    
-//     let relationshipStatus = 'none';
-//     if (currentUserRelationship) {
-//       if (currentUserRelationship.following.includes(user._id)) {
-//         relationshipStatus = 'following';
-//       }
-//       if (currentUserRelationship.followers.includes(user._id)) {
-//         relationshipStatus = 'follower';
-//       }
-//       if (currentUserRelationship.followRequestsSent.includes(user._id)) {
-//         relationshipStatus = 'requested';
-//       }
-//     }
-
-//     const userResponse = {
-//       userId: user._id,
-//       isUser: user.isUser,
-//       isCreator: user.isCreator,
-//       isVerified: user.isVerified,
-//       name: user.name,
-//       username: user.username,
-//       gender: user.gender,
-//       dob: user.dob,
-//       phoneNumber: user.phoneNumber,
-//       mailAddress: user.mailAddress,
-//       profession: user.profession,
-//       bio: user.bio,
-//       website: user.website,
-//       profileImg: user.profileImg,
-//       followers: relationship ? relationship.followers : [],
-//       following: relationship ? relationship.following : [],
-//       relationshipStatus,
-//       createdAt: user.createdAt,
-//       updatedAt: user.updatedAt
-//     };
-
-//     res.json(userResponse);
-//   } catch (err) {
-//     res.status(500).json({ message: err.message });
-//   }
-// };
 
 
 
@@ -208,87 +118,6 @@ exports.getUserById = async function (req, res) {
   }
 };
 
-
-
-
-
-
-
-// // Check relationship while searching users
-// exports.searchUsersByName = async function (req, res) {
-//   const searchTerm = req.query.name;
-//   if (!searchTerm) {
-//     return res.status(400).json({ message: 'Name query parameter is required' });
-//   }
-
-//   // try {
-//   //   const users = await User.find({
-//   //     $or: [
-//   //       { name: { $regex: searchTerm, $options: 'i' } },
-//   //       { username: { $regex: searchTerm, $options: 'i' } }
-//   //     ]
-//   //   });
-
-
-//   try{
-//     const users = await User.find({
-//       $or: [
-//         { name: { $regex: `^${searchTerm}`, $options: 'i' } }, 
-//         { username: { $regex: `^${searchTerm}`, $options: 'i' } } 
-//       ]
-//     });
-
-    
-//     const filteredUsers = users.filter(user => user._id.toString() !== req.user.id);
-
-//     if (filteredUsers.length === 0) {
-//       return res.status(404).json({ message: 'No users found' });
-//     }
-
-    
-//     const currentUserRelationship = await UserRelationship.findOne({ userId: req.user.id });
-
-//     const userResponses = filteredUsers.map(user => {
-     
-//       let relationshipStatus = 'none';
-//       if (currentUserRelationship) {
-//         if (currentUserRelationship.following.includes(user._id)) {
-//           relationshipStatus = 'following';
-//         }
-//         if (currentUserRelationship.followers.includes(user._id)) {
-//           relationshipStatus = 'follower';
-//         }
-//         if (currentUserRelationship.followRequestsSent.includes(user._id)) {
-//           relationshipStatus = 'requested';
-//         }
-//       }
-
-//       return {
-//         userId: user._id,
-//         isUser: user.isUser,
-//         isCreator: user.isCreator,
-//         isVerified: user.isVerified,
-//         name: user.name,
-//         username: user.username,
-//         gender: user.gender,
-//         dob: user.dob,
-//         phoneNumber: user.phoneNumber,
-//         mailAddress: user.mailAddress,
-//         profession: user.profession,
-//         bio: user.bio,
-//         website: user.website,
-//         profileImg: user.profileImg,
-//         relationshipStatus,
-//         createdAt: user.createdAt,
-//         updatedAt: user.updatedAt
-//       };
-//     });
-
-//     res.json(userResponses);
-//   } catch (err) {
-//     res.status(500).json({ message: err.message });
-//   }
-// };
 
 
 exports.searchUsersByName = async function (req, res) {
