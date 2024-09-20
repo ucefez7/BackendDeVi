@@ -39,7 +39,7 @@ router.get('/users/search',userAuthMiddleware, searchUsersByName);
 router.get('/users/:id',userAuthMiddleware, getUserById);            
 router.post('/users/signout', userAuthMiddleware, signoutUser);
 router.put('/users/:id',userAuthMiddleware, updateUser);              
-router.delete('/users/:id',userAuthMiddleware, deleteUser);            
+router.delete('/users/delete',userAuthMiddleware, deleteUser);            
 
 // Get relationship status between two users
 router.get('/users/relationship/:id', userAuthMiddleware, getRelationshipStatus);

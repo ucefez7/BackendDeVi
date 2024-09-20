@@ -332,10 +332,51 @@ exports.signupUser = async function (req, res) {
 
 
 
-// Update user by ID
+// // Update user by ID
+// exports.updateUser = async function (req, res) {
+//   try {
+//     const user = await User.findByIdAndUpdate(req.params.id, req.body, { new: true });
+//     if (!user) return res.status(404).json({ message: 'User not found' });
+
+//     const userResponse = {
+//       userId: user._id,
+//       isUser: user.isUser,
+//       isCreator: user.isCreator,
+//       isVerified: user.isVerified,
+//       name: user.name,
+//       username: user.username,
+//       gender: user.gender,
+//       dob: user.dob,
+//       phoneNumber: user.phoneNumber,
+//       mailAddress: user.mailAddress,
+//       profession: user.profession,
+//       bio: user.bio,
+//       website: user.website,
+//       profileImg: user.profileImg,
+//       createdAt: user.createdAt,
+//       updatedAt: user.updatedAt
+//     };
+
+//     res.json(userResponse);
+//   } catch (err) {
+//     res.status(400).json({ message: err.message });
+//   }
+// };
+
+
+
+
+// Update user by ID (Excluding phoneNumber, username, mailAddress from update)
 exports.updateUser = async function (req, res) {
   try {
-    const user = await User.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const { name, gender, dob, profession, bio, website, profileImg } = req.body;
+
+    const user = await User.findByIdAndUpdate(
+      req.user.id, 
+      { name, gender, dob, profession, bio, website, profileImg, updatedAt: Date.now() },
+      { new: true }
+    );
+
     if (!user) return res.status(404).json({ message: 'User not found' });
 
     const userResponse = {
@@ -344,11 +385,11 @@ exports.updateUser = async function (req, res) {
       isCreator: user.isCreator,
       isVerified: user.isVerified,
       name: user.name,
-      username: user.username,
+      username: user.username, // Keep original username
       gender: user.gender,
       dob: user.dob,
-      phoneNumber: user.phoneNumber,
-      mailAddress: user.mailAddress,
+      phoneNumber: user.phoneNumber, // Keep original phoneNumber
+      mailAddress: user.mailAddress, // Keep original mailAddress
       profession: user.profession,
       bio: user.bio,
       website: user.website,
@@ -363,16 +404,31 @@ exports.updateUser = async function (req, res) {
   }
 };
 
-// Delete user
+
+// // Delete user
+// exports.deleteUser = async function (req, res) {
+//   try {
+//     const user = await User.findByIdAndDelete(req.params.id);
+//     if (!user) return res.status(404).json({ message: 'User not found' });
+//     res.json({ message: 'User deleted' });
+//   } catch (err) {
+//     res.status(500).json({ message: err.message });
+//   }
+// };
+
+
+
+// Delete current user (Authenticated User)
 exports.deleteUser = async function (req, res) {
   try {
-    const user = await User.findByIdAndDelete(req.params.id);
+    const user = await User.findByIdAndDelete(req.user.id);
     if (!user) return res.status(404).json({ message: 'User not found' });
-    res.json({ message: 'User deleted' });
+    res.json({ message: 'User account deleted successfully' });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
+
 
 
 // Get Relationship Status
