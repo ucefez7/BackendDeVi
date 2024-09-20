@@ -548,7 +548,8 @@ exports.getUserNotifications = async function (req, res) {
           name: user.name,
           username: user.username,
           profileImg: user.profileImg,
-          message: `${user.username} has sent you a follow request.`,
+          // message: `${user.username} has sent you a follow request.`,
+          message: `Want to be your buddy...! 🤗`,
           createdAt: new Date(),
           followed: false,
         });
@@ -566,7 +567,8 @@ exports.getUserNotifications = async function (req, res) {
             name: user.name,
             username: user.username,
             profileImg: user.profileImg,
-            message: `${user.username} has accepted your follow request.`,
+            // message: `${user.username} has accepted your follow request.`,
+            message: `Made you her buddy...! 🥳`,
             createdAt: new Date(),
             followed: user.isCreator,
           });
