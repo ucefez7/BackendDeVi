@@ -1096,25 +1096,26 @@ exports.getArchivedPostById = async (req, res, next) => {
 
 
 
+
 // Pin a post (max 5 pinned posts)
 exports.pinPost = async (req, res, next) => {
   const userId = req.user.id;
   const { postId } = req.params;
 
   try {
-    // Check if the post belongs to the current user
+    
     const post = await PostModel.findOne({ _id: postId, userId });
     if (!post) {
       return res.status(404).json({ error: 'Post not found or you do not have permission to pin this post' });
     }
 
-    // Check if the user already has 5 pinned posts
+   
     const pinnedCount = await PostModel.countDocuments({ userId, isPinned: true });
     if (pinnedCount >= 5) {
       return res.status(400).json({ error: 'You can only pin up to 5 posts' });
     }
 
-    // Pin the post
+    
     post.isPinned = true;
     post.pinnedAt = new Date();
     await post.save();
@@ -1131,13 +1132,11 @@ exports.unpinPost = async (req, res, next) => {
   const { postId } = req.params;
 
   try {
-    // Check if the post belongs to the current user
+   
     const post = await PostModel.findOne({ _id: postId, userId });
     if (!post) {
       return res.status(404).json({ error: 'Post not found or you do not have permission to unpin this post' });
     }
-
-    // Unpin the post
     post.isPinned = false;
     post.pinnedAt = null;
     await post.save();
