@@ -186,7 +186,7 @@ exports.getAllPosts = async (req, res, next) => {
 
     const posts = await PostModel.find({
       isBlocked: false,
-      isArchived: false,
+      isArchived: false || null,
       _id: { $nin: excludedPostIds },
       userId: { $nin: notInterestedUserIds },
     })
