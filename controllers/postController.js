@@ -699,7 +699,7 @@ exports.getPostsByUser = async (req, res, next) => {
     const posts = await PostModel.find({
         userId,
         isBlocked: false,
-        isArchived: false,
+        isArchived: false || null,
         _id: { $nin: reportedPostIds }
       })
       .populate({
@@ -771,7 +771,7 @@ exports.getPostsByCategory = async (req, res, next) => {
     const posts = await PostModel.find({
         category: { $regex: new RegExp(`^${category}$`, 'i') },
         isBlocked: false,
-        isArchived: false,
+        isArchived: false || null,
         _id: { $nin: excludedPostIds },
         userId: { $nin: notInterestedUserIds },
       })
