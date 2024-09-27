@@ -170,103 +170,6 @@ const classifyMediaType = (post) => {
 
 
 
-// exports.getAllPosts = async (req, res, next) => {
-//   const userId = req.user.id;
-//   console.log("All posts loading...");
-  
-//   try {
-   
-//     const reportedPosts = await ReportPostModel.find().select('postId');
-//     const reportedPostIds = reportedPosts.map(report => report.postId.toString());
-//     const notInterestedPosts = await NotInterestedModel.find({ userId }).select('postId');
-//     const notInterestedPostIds = notInterestedPosts.map(item => item.postId.toString());
-//     const notInterestedPostUsers = await PostModel.find({ _id: { $in: notInterestedPostIds } }).select('userId');
-//     const notInterestedUserIds = notInterestedPostUsers.map(post => post.userId.toString());
-
-//     const excludedPostIds = [...reportedPostIds, ...notInterestedPostIds];
-
-    
-//     const posts = await PostModel.find({
-//         isBlocked: false,
-//         _id: { $nin: excludedPostIds },
-//         userId: { $nin: notInterestedUserIds },
-//       })
-//       .populate({
-//         path: 'userId',
-//         select: 'username name profession following followers profileImg',
-//       })
-//       .sort({ createdAt: -1 });
-
-  
-//     if (!posts.length) {
-//       return res.status(404).json({ message: 'No posts found' });
-//     }
-
- 
-//     const postsWithUserDetails = posts.map(post => {
-//       const user = post.userId;
-//       const mediaType = classifyMediaType(post);
-//       return {
-//         ...post.toObject(),
-//         userId: {
-//           ...user.toObject(),
-//           followingCount: user.following ? user.following.length : 0,
-//           followersCount: user.followers ? user.followers.length : 0,
-//         },
-//         mediaType: mediaType,
-//       };
-//     });
-
-//     res.status(200).json(postsWithUserDetails);
-//   } catch (error) {
-//     next(error);
-//   }
-// };
-
-
-
-
-
-
-// // Get a single post by ID
-// exports.getPostById = async (req, res, next) => {
-//   const { postId } = req.params;
-
-//   try {
-//     const post = await PostModel.findById(postId)
-//       .populate({
-//         path: 'userId',
-//         select: 'username name profession following followers profileImg',
-//       });
-
-//     if (!post) {
-//       throw createHttpError(404, 'No Post found with this ID');
-//     }
-
-//     const user = post.userId;
-//     const mediaType = classifyMediaType(post);
-//     const postWithUserDetails = {
-//       ...post.toObject(),
-//       userId: {
-//         ...user.toObject(),
-//         followingCount: user.following ? user.following.length : 0,
-//         followersCount: user.followers ? user.followers.length : 0,
-//       },
-//       mediaType,
-//     };
-
-//     res.status(200).json(postWithUserDetails);
-//   } catch (error) {
-//     next(error);
-//   }
-// };
-
-
-
-
-
-
-
 exports.getAllPosts = async (req, res, next) => {
   const userId = req.user.id;
   console.log("All posts loading...");
@@ -283,6 +186,7 @@ exports.getAllPosts = async (req, res, next) => {
 
     const posts = await PostModel.find({
       isBlocked: false,
+      isArchived: false,
       _id: { $nin: excludedPostIds },
       userId: { $nin: notInterestedUserIds },
     })
@@ -339,27 +243,88 @@ exports.getAllPosts = async (req, res, next) => {
 
 
 
+// exports.getPostById = async (req, res, next) => {
+//   const { postId } = req.params;
+//   const currentUserId = req.user.id;
+
+//   try {
+//     const post = await PostModel.findById(postId)
+//       .populate({
+//         path: 'userId',
+//         select: 'username name profession following followers profileImg',
+//       });
+
+//     if (!post) {
+//       throw createHttpError(404, 'No Post found with this ID');
+//     }
+
+//     const user = post.userId;
+//     const mediaType = classifyMediaType(post);
+
+//     const currentUserRelationship = await UserRelationship.findOne({ userId: currentUserId });
+
+//     let relationshipStatus = 'none';
+//     if (currentUserRelationship) {
+//       if (currentUserRelationship.following.includes(user._id)) {
+//         relationshipStatus = 'following';
+//       }
+//       if (currentUserRelationship.followers.includes(user._id)) {
+//         relationshipStatus = 'follower';
+//       }
+//       if (currentUserRelationship.followRequestsSent.includes(user._id)) {
+//         relationshipStatus = 'requested';
+//       }
+//     }
+
+//     const postWithUserDetails = {
+//       ...post.toObject(),
+//       userId: {
+//         ...user.toObject(),
+//         followingCount: user.following ? user.following.length : 0,
+//         followersCount: user.followers ? user.followers.length : 0,
+//         relationshipStatus
+//       },
+//       mediaType,
+//     };
+
+//     res.status(200).json(postWithUserDetails);
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+
+
+
+
 exports.getPostById = async (req, res, next) => {
   const { postId } = req.params;
   const currentUserId = req.user.id;
 
   try {
+    
     const post = await PostModel.findById(postId)
       .populate({
         path: 'userId',
         select: 'username name profession following followers profileImg',
       });
 
+    
     if (!post) {
       throw createHttpError(404, 'No Post found with this ID');
+    }
+
+    
+    if (post.isArchived) {
+      return res.status(403).json({ message: 'This post is archived and cannot be viewed.' });
     }
 
     const user = post.userId;
     const mediaType = classifyMediaType(post);
 
+    
     const currentUserRelationship = await UserRelationship.findOne({ userId: currentUserId });
-
     let relationshipStatus = 'none';
+
     if (currentUserRelationship) {
       if (currentUserRelationship.following.includes(user._id)) {
         relationshipStatus = 'following';
@@ -388,6 +353,7 @@ exports.getPostById = async (req, res, next) => {
     next(error);
   }
 };
+
 
 
 
@@ -658,8 +624,6 @@ exports.getSavedPost = async (req, res, next) => {
 
 
 
-
-// // Get all posts by a user, excluding reported posts
 // exports.getPostsByUser = async (req, res, next) => {
 //   const { userId } = req.params;
 
@@ -670,6 +634,7 @@ exports.getSavedPost = async (req, res, next) => {
 //     const posts = await PostModel.find({
 //         userId,
 //         isBlocked: false,
+//         isArchived: false,
 //         _id: { $nin: reportedPostIds }
 //       })
 //       .populate({
@@ -682,21 +647,38 @@ exports.getSavedPost = async (req, res, next) => {
 //       return res.status(404).json({ message: 'No posts found for this user' });
 //     }
 
-    
-//     const postsWithUserDetails = posts.map(post => {
+//     const currentUserId = req.user.id;
+//     const currentUserRelationship = await UserRelationship.findOne({ userId: currentUserId });
+
+//     const postsWithUserDetails = await Promise.all(posts.map(async (post) => {
 //       const user = post.userId;
 //       const mediaType = classifyMediaType(post);
+
+//       let relationshipStatus = 'none';
+//       if (currentUserRelationship) {
+//         if (currentUserRelationship.following.includes(user._id)) {
+//           relationshipStatus = 'following';
+//         }
+//         if (currentUserRelationship.followers.includes(user._id)) {
+//           relationshipStatus = 'follower';
+//         }
+//         if (currentUserRelationship.followRequestsSent.includes(user._id)) {
+//           relationshipStatus = 'requested';
+//         }
+//       }
+
 //       return {
 //         ...post.toObject(),
 //         userId: {
 //           ...user.toObject(),
 //           followingCount: user.following ? user.following.length : 0,
 //           followersCount: user.followers ? user.followers.length : 0,
+//           relationshipStatus,
 //         },
 //         mediaType,
 //       };
-//     });
-    
+//     }));
+
 //     res.status(200).json(postsWithUserDetails);
 //   } catch (error) {
 //     next(error);
@@ -705,87 +687,28 @@ exports.getSavedPost = async (req, res, next) => {
 
 
 
-
-
-// exports.getPostsByCategory = async (req, res, next) => {
-//   const { category } = req.params;
-//   const userId = req.user.id;
-
-//   try {
-    
-//     const reportedPosts = await ReportPostModel.find().select('postId');
-//     const reportedPostIds = reportedPosts.map(report => report.postId.toString());
-//     const notInterestedPosts = await NotInterestedModel.find({ userId }).select('postId');
-//     const notInterestedPostIds = notInterestedPosts.map(notInterested => notInterested.postId.toString());
-//     const notInterestedPostUsers = await PostModel.find({ _id: { $in: notInterestedPostIds } }).select('userId');
-//     const notInterestedUserIds = notInterestedPostUsers.map(post => post.userId.toString());
-
-   
-//     const excludedPostIds = [...reportedPostIds, ...notInterestedPostIds];
-
-    
-//     const posts = await PostModel.find({
-//         category: { $regex: new RegExp(`^${category}$`, 'i') },
-//         isBlocked: false,
-//         _id: { $nin: excludedPostIds },
-//         userId: { $nin: notInterestedUserIds },
-//       })
-//       .populate({
-//         path: 'userId',
-//         select: 'username name profession followers following profileImg',
-//       })
-//       .populate({
-//         path: 'likes',
-//         select: 'username name',
-//       })
-//       .sort({ createdAt: -1 });
-
-   
-//     if (!posts.length) {
-//       return res.status(404).json({ message: 'No posts found for this category' });
-//     }
-
- 
-//     const postsWithDetails = posts.map(post => {
-//       const user = post.userId;
-//       const mediaType = classifyMediaType(post);
-
-//       return {
-//         ...post.toObject(),
-//         userId: {
-//           ...user.toObject(),
-//           followingCount: user.following ? user.following.length : 0,
-//           followersCount: user.followers ? user.followers.length : 0,
-//         },
-//         likes: post.likes,
-//         mediaType,
-//       };
-//     });
-//     res.status(200).json(postsWithDetails);
-//   } catch (error) {
-//     next(error);
-//   }
-// };
-
-
 exports.getPostsByUser = async (req, res, next) => {
   const { userId } = req.params;
 
   try {
+    
     const reportedPosts = await ReportPostModel.find().select('postId');
     const reportedPostIds = reportedPosts.map(report => report.postId.toString());
 
+   
     const posts = await PostModel.find({
         userId,
         isBlocked: false,
+        isArchived: false,
         _id: { $nin: reportedPostIds }
       })
       .populate({
         path: 'userId',
         select: 'username profession name profileImg',
       })
-      .sort({ createdAt: -1 });
+      .sort({ pinned: -1, pinnedAt: -1, createdAt: -1 });
 
+    
     if (!posts.length) {
       return res.status(404).json({ message: 'No posts found for this user' });
     }
@@ -830,6 +753,7 @@ exports.getPostsByUser = async (req, res, next) => {
 
 
 
+
 exports.getPostsByCategory = async (req, res, next) => {
   const { category } = req.params;
   const userId = req.user.id;
@@ -847,6 +771,7 @@ exports.getPostsByCategory = async (req, res, next) => {
     const posts = await PostModel.find({
         category: { $regex: new RegExp(`^${category}$`, 'i') },
         isBlocked: false,
+        isArchived: false,
         _id: { $nin: excludedPostIds },
         userId: { $nin: notInterestedUserIds },
       })
@@ -1067,6 +992,158 @@ exports.removeNotInterested = async (req, res, next) => {
     res.status(200).json({ message: 'Post removed from Not Interested list' });
   } catch (error) {
     console.error(error);
+    next(error);
+  }
+};
+
+
+
+
+exports.archivePost = async (req, res, next) => {
+  const userId = req.user.id;
+  const { postId } = req.params;
+
+  try {
+    const post = await PostModel.findById(postId);
+
+    if (!post) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+
+    if (post.userId.toString() !== userId) {
+      return res.status(401).json({ error: "You are not authorized to archive this post" });
+    }
+
+    post.isArchived = true;
+    await post.save();
+
+    res.status(200).json({ message: 'Post archived successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+exports.unarchivePost = async (req, res, next) => {
+  const userId = req.user.id;
+  const { postId } = req.params;
+
+  try {
+    const post = await PostModel.findById(postId);
+
+    if (!post) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+
+    if (post.userId.toString() !== userId) {
+      return res.status(401).json({ error: "You are not authorized to unarchive this post" });
+    }
+
+    if (!post.isArchived) {
+      return res.status(400).json({ error: 'Post is not archived' });
+    }
+
+    post.isArchived = false;
+    await post.save();
+
+    res.status(200).json({ message: 'Post unarchived successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+
+
+exports.getArchivedPosts = async (req, res, next) => {
+  const userId = req.user.id;
+
+  try {
+    const archivedPosts = await PostModel.find({ userId, isArchived: true })
+      .populate('userId', 'username name profession')
+      .sort({ createdAt: -1 });
+
+    if (!archivedPosts.length) {
+      return res.status(404).json({ message: 'No archived posts found' });
+    }
+
+    res.status(200).json(archivedPosts);
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+
+exports.getArchivedPostById = async (req, res, next) => {
+  const { postId } = req.params;
+  const userId = req.user.id;
+
+  try {
+    const post = await PostModel.findOne({ _id: postId, isArchived: true, userId });
+
+    if (!post) {
+      return res.status(404).json({ error: 'Archived post not found' });
+    }
+
+    res.status(200).json(post);
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+
+
+
+// Pin a post (max 5 pinned posts)
+exports.pinPost = async (req, res, next) => {
+  const userId = req.user.id;
+  const { postId } = req.params;
+
+  try {
+    // Check if the post belongs to the current user
+    const post = await PostModel.findOne({ _id: postId, userId });
+    if (!post) {
+      return res.status(404).json({ error: 'Post not found or you do not have permission to pin this post' });
+    }
+
+    // Check if the user already has 5 pinned posts
+    const pinnedCount = await PostModel.countDocuments({ userId, isPinned: true });
+    if (pinnedCount >= 5) {
+      return res.status(400).json({ error: 'You can only pin up to 5 posts' });
+    }
+
+    // Pin the post
+    post.isPinned = true;
+    post.pinnedAt = new Date();
+    await post.save();
+
+    res.status(200).json({ message: 'Post pinned successfully', post });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Unpin a post
+exports.unpinPost = async (req, res, next) => {
+  const userId = req.user.id;
+  const { postId } = req.params;
+
+  try {
+    // Check if the post belongs to the current user
+    const post = await PostModel.findOne({ _id: postId, userId });
+    if (!post) {
+      return res.status(404).json({ error: 'Post not found or you do not have permission to unpin this post' });
+    }
+
+    // Unpin the post
+    post.isPinned = false;
+    post.pinnedAt = null;
+    await post.save();
+
+    res.status(200).json({ message: 'Post unpinned successfully', post });
+  } catch (error) {
     next(error);
   }
 };

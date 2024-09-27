@@ -397,6 +397,7 @@ exports.updateUser = async function (req, res) {
       createdAt: user.createdAt,
       updatedAt: user.updatedAt
     };
+console.log("ethalle response: " +userResponse);
 
     res.json(userResponse);
   } catch (err) {

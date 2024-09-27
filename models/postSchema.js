@@ -63,6 +63,17 @@ const postSchema = new Schema({
     type: Boolean,
     // required: [true, 'isBlog field is required'],
   },
+  isArchived: {
+    type: Boolean,
+    default: false,  // Initially, a post is not archived.
+  },
+  isPinned: {
+    type: Boolean,
+    default: false,
+  },
+  pinnedAt: {
+    type: Date,
+  },
 }, { timestamps: true });
 
 module.exports = model('Post', postSchema);
