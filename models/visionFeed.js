@@ -1,33 +1,47 @@
 const mongoose = require('mongoose');
-const VisionFeedSchema = new mongoose.Schema({
-  platform: {
+
+const mediaSchema = new mongoose.Schema({
+  mediaType: {
     type: String,
-    required: true
-  },
-  username: {
-    type: String,
-    required: true
+    enum: ['Image', 'Video'],
+    required: true,
   },
   description: {
     type: String,
-    required: true
+    required: true,
   },
-  category: {
+  platform: {
     type: String,
-    required: true
+    enum: [
+      'DeVi',
+      'Instagram',
+      'Facebook',
+      'Youtube',
+      'LinkedIn',
+      'X', 
+    ],
+    required: true,
   },
-  mediaUrl: {
-    type: String, 
-    required: true
-  },
-  mediaType: {
+  usernameOrName: {
     type: String,
-    required: true
+    required: true,
   },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  }
-}, { timestamps: true }); 
+  location: {
+    type: String,
+    required: false, 
+  },
+  categories: {
+    type: [String], 
+    required: true,
+  },
+  subCategories: {
+    type: [String], 
+    required: false, 
+  },
+}, {
+  timestamps: true, 
+});
 
-module.exports = mongoose.model('VisionFeed', VisionFeedSchema);
+const Media = mongoose.model('Media', mediaSchema);
+
+module.exports = Media;

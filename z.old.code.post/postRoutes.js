@@ -12,9 +12,6 @@ router.delete('/posts/:postId', userAuthMiddleware, postController.deletePost);
 router.get('/posts/user/:userId',userAuthMiddleware, postController.getPostsByUser);
 router.get('/posts/category/:category',userAuthMiddleware, postController.getPostsByCategory);
 
-// New route for uploading videos
-router.post('/posts/upload-video', userAuthMiddleware, postController.uploadVideo);
-
 // Comment and like/unlike routes
 router.post('/posts/comment', userAuthMiddleware, postController.addComment);
 router.delete('/posts/comment', userAuthMiddleware, postController.deleteComment);
@@ -39,5 +36,16 @@ router.post('/posts/reported-posts', userAuthMiddleware, postController.getRepor
 router.post('/posts/not-interested/:postId', userAuthMiddleware, postController.markAsNotInterested);
 router.post('/posts/not-interested', userAuthMiddleware, postController.getNotInterestedPosts);
 router.delete('/posts/not-interested/:postId', userAuthMiddleware, postController.removeNotInterested);
+
+//Archieve posts
+router.post('/archive/:postId',userAuthMiddleware, postController.archivePost);
+router.post('/unarchive/:postId', userAuthMiddleware, postController.unarchivePost);
+router.get('/archived', userAuthMiddleware, postController.getArchivedPosts);
+router.get('/archived/:postId', userAuthMiddleware, postController.getArchivedPostById);
+
+
+//Pin a post
+router.post('/posts/pin/:postId', userAuthMiddleware, postController.pinPost);
+router.post('/posts/unpin/:postId', userAuthMiddleware, postController.unpinPost);
 
 module.exports = router;

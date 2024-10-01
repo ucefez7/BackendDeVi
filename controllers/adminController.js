@@ -12,9 +12,15 @@ exports.login = async function(req, res) {
     if (!admin || admin.password !== password) {
       return res.status(401).json({ message: 'Invalid user' });
     }
+    
 
     const token = signToken(admin._id);
-    res.json({ token });
+    console.log("varanille data:" +admin._id);
+    
+    res.json({ token,
+      adminId: admin._id,
+      username: admin.username
+     });
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
   }

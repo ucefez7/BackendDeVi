@@ -1,4 +1,5 @@
-const { verifyToken } = require('../utils/jwtUtils');
+const { verifyToken } = require('../utils/userUtils');
+// const { verifyToken } = require('../utils/jwtUtils');
 const User = require('../models/User');
 const TokenBlacklist = require('../models/TokenBlacklist');
 const createHttpError = require('http-errors');
