@@ -100,19 +100,44 @@ exports.createPost = [
 
 
 
-// Update an existing post by ID
-exports.updatePost = async (req, res) => {
-  const postId = req.params.id;
-  try {
-    const updatedPost = await Media.findByIdAndUpdate(postId, req.body, { new: true });
-    if (!updatedPost) {
-      return res.status(404).json({ message: 'Post not found' });
+exports.updatePost = [
+  uploadMedia.fields([{ name: 'mediaUrl', maxCount: 5 }]),
+  async (req, res) => {
+    const postId = req.params.id;
+
+    try {
+      const { description, platform, usernameOrName, location, categories, subCategories } = req.body;
+
+      // Handle updated media files if present
+      const mediaURLs = req.files && req.files['mediaUrl'] ? req.files['mediaUrl'].map(file => file.path) : null;
+
+      const updateData = {
+        description,
+        platform,
+        usernameOrName,
+        location,
+        categories: Array.isArray(categories) ? categories : [categories],
+        subCategories: Array.isArray(subCategories) ? subCategories : [subCategories],
+      };
+
+      // Only update mediaUrl if new files are uploaded
+      if (mediaURLs) {
+        updateData.mediaUrl = mediaURLs[0];
+      }
+
+      const updatedPost = await Media.findByIdAndUpdate(postId, updateData, { new: true });
+
+      if (!updatedPost) {
+        return res.status(404).json({ message: 'Post not found' });
+      }
+
+      res.json(updatedPost);
+    } catch (err) {
+      res.status(500).json({ message: 'Error updating post', error: err.message });
     }
-    res.json(updatedPost);
-  } catch (err) {
-    res.status(500).json({ message: 'Error updating post', error: err.message });
   }
-};
+];
+
 
 // Delete a post by ID
 exports.deletePost = async (req, res) => {
