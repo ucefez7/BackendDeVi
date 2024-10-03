@@ -1,5 +1,5 @@
-const Admin = require('../models/adminModel');
-const { signToken } = require('../utils/jwtUtils');
+const Admin = require('../../models/adminModel');
+const { signToken } = require('../../utils/jwtUtils');
 
 // Login function
 exports.login = async function(req, res) {

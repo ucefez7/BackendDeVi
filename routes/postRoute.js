@@ -12,9 +12,6 @@ router.delete('/posts/:postId', userAuthMiddleware, postController.deletePost);
 router.get('/posts/user/:userId',userAuthMiddleware, postController.getPostsByUser);
 router.get('/posts/category/:category',userAuthMiddleware, postController.getPostsByCategory);
 
-// New route for uploading videos
-router.post('/posts/upload-video', userAuthMiddleware, postController.uploadVideo);
-
 // Comment and like/unlike routes
 router.post('/posts/comment', userAuthMiddleware, postController.addComment);
 router.delete('/posts/comment', userAuthMiddleware, postController.deleteComment);
