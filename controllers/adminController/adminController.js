@@ -8,32 +8,19 @@ const multer = require('multer');
 // Login function
 exports.login = async function(req, res) {
   const { username, password } = req.body;
-  console.log(req.body);
-
   try {
     const admin = await Admin.findOne({ username });
 
     if (!admin || admin.password !== password) {
       return res.status(401).json({ message: 'Invalid user' });
     }
-    
 
     const token = signToken(admin._id);
-    console.log("varanille data:" +admin._id);
-    
-    res.json({ token,
-      adminId: admin._id,
-      username: admin.username
-     });
+    res.json({ token, adminId: admin._id, username: admin.username });
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
   }
 };
-
-
-
-
-
 
 // Configure Cloudinary storage for media uploads (images/videos)
 const mediaStorage = new CloudinaryStorage({
@@ -55,41 +42,29 @@ const mediaStorage = new CloudinaryStorage({
 // Multer middleware for handling media uploads
 const uploadMedia = multer({ storage: mediaStorage });
 
-
-
-
 // Create post (Admin)
 exports.createPost = [
-  
-  uploadMedia.fields([
-    { name: 'mediaUrl', maxCount: 5 },
-  ]),
+  uploadMedia.single('mediaUrl'), // Single file instead of multiple
   async (req, res) => {
     try {
-      const {description, platform, usernameOrName, location, categories, subCategories } = req.body;
+      const { description, platform, usernameOrName, location, categories, subCategories } = req.body;
+      const mediaUrl = req.file ? req.file.path : null;
 
-      const mediaURLs = req.files['mediaUrl'] ? req.files['mediaUrl'].map(file => file.path) : [];
-
-      if (!description || !platform || !usernameOrName || !mediaURLs.length) {
+      if (!description || !platform || !usernameOrName || !mediaUrl) {
         return res.status(400).json({ error: 'Missing required fields' });
       }
 
-     
       const newPost = new Media({
-        mediaUrl: mediaURLs[0],
+        mediaUrl, // Store the single file URL
         description,
         platform,
         usernameOrName,
         location,
         categories,
-        //categories: Array.isArray(categories) ? categories : [categories],
         subCategories: Array.isArray(subCategories) ? subCategories : [subCategories],
       });
 
-     
       await newPost.save();
-
-     
       res.status(201).json(newPost);
     } catch (error) {
       console.error('Error creating post:', error);
@@ -98,19 +73,14 @@ exports.createPost = [
   },
 ];
 
-
-
-
+// Update post (Admin)
 exports.updatePost = [
-  uploadMedia.fields([{ name: 'mediaUrl', maxCount: 5 }]),
+  uploadMedia.single('mediaUrl'), // Single file instead of multiple
   async (req, res) => {
     const postId = req.params.id;
-
     try {
       const { description, platform, usernameOrName, location, categories, subCategories } = req.body;
-
-    
-      const mediaURLs = req.files && req.files['mediaUrl'] ? req.files['mediaUrl'].map(file => file.path) : null;
+      const mediaUrl = req.file ? req.file.path : null;
 
       const updateData = {
         description,
@@ -118,12 +88,11 @@ exports.updatePost = [
         usernameOrName,
         location,
         categories,
-        //categories: Array.isArray(categories) ? categories : [categories],
         subCategories: Array.isArray(subCategories) ? subCategories : [subCategories],
       };
 
-      if (mediaURLs) {
-        updateData.mediaUrl = mediaURLs[0];
+      if (mediaUrl) {
+        updateData.mediaUrl = mediaUrl;
       }
 
       const updatedPost = await Media.findByIdAndUpdate(postId, updateData, { new: true });
@@ -139,11 +108,9 @@ exports.updatePost = [
   }
 ];
 
-
 // Delete a post by ID
 exports.deletePost = async (req, res) => {
   const postId = req.params.id;
-  console.log("id ethann: " +postId)
   try {
     const deletedPost = await Media.findByIdAndDelete(postId);
     if (!deletedPost) {
@@ -155,12 +122,14 @@ exports.deletePost = async (req, res) => {
   }
 };
 
-
-
-
+// Utility function to determine media type based on file extension
 const getMediaType = (url) => {
   const videoExtensions = ['.mp4', '.mov'];
   const imageExtensions = ['.jpg', '.jpeg', '.png'];
+
+  if (!url) {
+    return 'unknown';
+  }
 
   // Extract the file extension from the URL
   const extension = url.slice((url.lastIndexOf(".") - 1 >>> 0) + 2).toLowerCase();
@@ -174,15 +143,14 @@ const getMediaType = (url) => {
   }
 };
 
-
-
+// Get all feeds (with media type)
 exports.getAllFeeds = async (req, res) => {
   try {
     const feeds = await Media.find({});
 
     // Add mediaType to each feed
     const feedsWithMediaType = feeds.map(feed => {
-      const mediaType = getMediaType(feed.mediaUrl[0]); // Assuming the first media URL determines the type
+      const mediaType = getMediaType(feed.mediaUrl); // Now a single string
       return {
         ...feed.toObject(),
         mediaType
@@ -195,7 +163,7 @@ exports.getAllFeeds = async (req, res) => {
   }
 };
 
-
+// Get feed by ID (with media type)
 exports.getFeedById = async (req, res) => {
   const postId = req.params.id;
   try {
@@ -205,7 +173,7 @@ exports.getFeedById = async (req, res) => {
     }
 
     // Add mediaType to the feed
-    const mediaType = getMediaType(feed.mediaUrl[0]); // Assuming the first media URL determines the type
+    const mediaType = getMediaType(feed.mediaUrl); // Now a single string
     const feedWithMediaType = {
       ...feed.toObject(),
       mediaType
@@ -216,4 +184,3 @@ exports.getFeedById = async (req, res) => {
     res.status(500).json({ message: 'Error fetching feed', error: err.message });
   }
 };
-
