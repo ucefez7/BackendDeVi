@@ -16,6 +16,7 @@ const postSchema = new Schema({
   },
   media: {
     type: [String],
+    default: [],
     //required: [true, 'Media is required'],
   },
   coverPhoto: {
@@ -29,9 +30,11 @@ const postSchema = new Schema({
   },
   category: {
     type: [String],
+    default: [],
   },
   subCategory: {
     type: [String],
+    default: [],
   },
   likes: [
     {

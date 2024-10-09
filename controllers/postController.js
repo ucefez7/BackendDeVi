@@ -170,97 +170,67 @@ const classifyMediaType = (post) => {
 
 
 
-// exports.getAllPosts = async (req, res, next) => {
-//   const userId = req.user.id;
-//   console.log("All posts loading...");
-  
-//   try {
-   
-//     const reportedPosts = await ReportPostModel.find().select('postId');
-//     const reportedPostIds = reportedPosts.map(report => report.postId.toString());
-//     const notInterestedPosts = await NotInterestedModel.find({ userId }).select('postId');
-//     const notInterestedPostIds = notInterestedPosts.map(item => item.postId.toString());
-//     const notInterestedPostUsers = await PostModel.find({ _id: { $in: notInterestedPostIds } }).select('userId');
-//     const notInterestedUserIds = notInterestedPostUsers.map(post => post.userId.toString());
+const uploadMedia = multer({ storage: postStorage }).fields([
+  { name: 'video', maxCount: 1 },
+  { name: 'coverPhoto', maxCount: 1 }
+]);
 
-//     const excludedPostIds = [...reportedPostIds, ...notInterestedPostIds];
 
+exports.uploadVideo = [
+  uploadMedia,
+  async (req, res) => {
+    console.log("before ....");
     
-//     const posts = await PostModel.find({
-//         isBlocked: false,
-//         _id: { $nin: excludedPostIds },
-//         userId: { $nin: notInterestedUserIds },
-//       })
-//       .populate({
-//         path: 'userId',
-//         select: 'username name profession following followers profileImg',
-//       })
-//       .sort({ createdAt: -1 });
+    const userId = req.user.id;
+    //const userId = req.user.id;
+    console.log("varanillle:" +userId);
+    
+    const { title, description, location, category, subCategory, isBlog } = req.body;
+    
+   
+    const videoURL = req.files['video'] ? req.files['video'][0].path : null;
+    const coverPhotoURL = req.files['coverPhoto'] ? req.files['coverPhoto'][0].path : null;
 
-  
-//     if (!posts.length) {
-//       return res.status(404).json({ message: 'No posts found' });
-//     }
+    try {
+     
+      if (!title || !videoURL) {
+        return res.status(400).json({ error: 'Title and video are required' });
+      }
 
- 
-//     const postsWithUserDetails = posts.map(post => {
-//       const user = post.userId;
-//       const mediaType = classifyMediaType(post);
-//       return {
-//         ...post.toObject(),
-//         userId: {
-//           ...user.toObject(),
-//           followingCount: user.following ? user.following.length : 0,
-//           followersCount: user.followers ? user.followers.length : 0,
-//         },
-//         mediaType: mediaType,
-//       };
-//     });
+      
+      const newPost = await PostModel.create({
+        userId,
+        title,
+        description,
+        video: videoURL,
+        coverPhoto: coverPhotoURL,
+        location,
+        category: Array.isArray(category) ? category : [category],
+        subCategory: Array.isArray(subCategory) ? subCategory : [subCategory],
+        likes: [],
+        comments: [],
+        shared: [],
+        isBlocked: false,
+        sensitive: false,
+        isBlog,
+      });
 
-//     res.status(200).json(postsWithUserDetails);
-//   } catch (error) {
-//     next(error);
-//   }
-// };
-
-
-
-
-
-
-// // Get a single post by ID
-// exports.getPostById = async (req, res, next) => {
-//   const { postId } = req.params;
-
-//   try {
-//     const post = await PostModel.findById(postId)
-//       .populate({
-//         path: 'userId',
-//         select: 'username name profession following followers profileImg',
-//       });
-
-//     if (!post) {
-//       throw createHttpError(404, 'No Post found with this ID');
-//     }
-
-//     const user = post.userId;
-//     const mediaType = classifyMediaType(post);
-//     const postWithUserDetails = {
-//       ...post.toObject(),
-//       userId: {
-//         ...user.toObject(),
-//         followingCount: user.following ? user.following.length : 0,
-//         followersCount: user.followers ? user.followers.length : 0,
-//       },
-//       mediaType,
-//     };
-
-//     res.status(200).json(postWithUserDetails);
-//   } catch (error) {
-//     next(error);
-//   }
-// };
-
+      
+      const user = await UserModel.findById(userId).select('name username following followers profession');
+      res.status(201).json({
+        ...newPost.toObject(),
+        userId: {
+          ...user.toObject(),
+          followingCount: user.following ? user.following.length : 0,
+          followersCount: user.followers ? user.followers.length : 0,
+        },
+      });
+    } catch (error) {
+      console.error('Internal Server Error:', error);
+      return res.status(500).json({ error: 'Internal Server Error. Please try again later.', details: error.message });
+    }
+  },
+];
 
 
 
@@ -290,14 +260,14 @@ exports.getAllPosts = async (req, res, next) => {
         path: 'userId',
         select: 'username name profession following followers profileImg',
       })
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 }); // First uploaded post comes first
 
     if (!posts.length) {
       return res.status(404).json({ message: 'No posts found' });
     }
 
     const currentUserRelationship = await UserRelationship.findOne({ userId });
-    
+
     const postsWithUserDetails = await Promise.all(posts.map(async post => {
       const user = post.userId;
 
@@ -318,15 +288,29 @@ exports.getAllPosts = async (req, res, next) => {
 
       const mediaType = classifyMediaType(post);
 
+      // Helper function to return empty array if any null values are present in the array
+      const cleanArray = (arr) => {
+        if (!arr || arr.some(item => item === null)) {
+          return [];
+        }
+        return arr;
+      };
+
       return {
         ...post.toObject(),
         userId: {
           ...user.toObject(),
           followingCount: user.following ? user.following.length : 0,
           followersCount: user.followers ? user.followers.length : 0,
-          relationshipStatus
+          relationshipStatus,
         },
         mediaType: mediaType,
+        // Check each array to ensure no null values
+        category: cleanArray(post.category),
+        subCategory: cleanArray(post.subCategory),
+        likes: cleanArray(post.likes),
+        comments: cleanArray(post.comments),
+        shared: cleanArray(post.shared),
       };
     }));
 
@@ -372,6 +356,13 @@ exports.getPostById = async (req, res, next) => {
       }
     }
 
+    const cleanArray = (arr) => {
+      if (!arr || arr.some(item => item === null)) {
+        return [];
+      }
+      return arr;
+    };
+
     const postWithUserDetails = {
       ...post.toObject(),
       userId: {
@@ -381,6 +372,11 @@ exports.getPostById = async (req, res, next) => {
         relationshipStatus
       },
       mediaType,
+      category: cleanArray(post.category),
+        subCategory: cleanArray(post.subCategory),
+        likes: cleanArray(post.likes),
+        comments: cleanArray(post.comments),
+        shared: cleanArray(post.shared),
     };
 
     res.status(200).json(postWithUserDetails);
@@ -809,6 +805,13 @@ exports.getPostsByUser = async (req, res, next) => {
           relationshipStatus = 'requested';
         }
       }
+      const cleanArray = (arr) => {
+        if (!arr || arr.some(item => item === null)) {
+          return [];
+        }
+        return arr;
+      };
+      
 
       return {
         ...post.toObject(),
@@ -819,6 +822,12 @@ exports.getPostsByUser = async (req, res, next) => {
           relationshipStatus,
         },
         mediaType,
+        category: cleanArray(post.category),
+        subCategory: cleanArray(post.subCategory),
+        likes: cleanArray(post.likes),
+        comments: cleanArray(post.comments),
+        shared: cleanArray(post.shared),
+
       };
     }));
 
@@ -883,6 +892,14 @@ exports.getPostsByCategory = async (req, res, next) => {
         }
       }
 
+      const cleanArray = (arr) => {
+        if (!arr || arr.some(item => item === null)) {
+          return [];
+        }
+        return arr;
+      };
+      
+
       return {
         ...post.toObject(),
         userId: {
@@ -891,8 +908,14 @@ exports.getPostsByCategory = async (req, res, next) => {
           followersCount: user.followers ? user.followers.length : 0,
           relationshipStatus,
         },
-        likes: post.likes,
+        //likes: post.likes,
         mediaType,
+        category: cleanArray(post.category),
+        subCategory: cleanArray(post.subCategory),
+        likes: cleanArray(post.likes),
+        comments: cleanArray(post.comments),
+        shared: cleanArray(post.shared),
+
       };
     }));
 

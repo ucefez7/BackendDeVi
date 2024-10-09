@@ -2,7 +2,8 @@ const mongoose = require('mongoose');
 
 const mediaSchema = new mongoose.Schema({
   mediaUrl: {
-    type: [String],
+    type: String,
+    //type: [String],
     required: true, 
   },
   description: {
@@ -23,7 +24,7 @@ const mediaSchema = new mongoose.Schema({
     required: false,
   },
   categories: {
-    type: [String],
+    type: String,
     required: true, 
   },
   subCategories: {

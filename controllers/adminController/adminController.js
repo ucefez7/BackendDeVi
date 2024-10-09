@@ -81,7 +81,8 @@ exports.createPost = [
         platform,
         usernameOrName,
         location,
-        categories: Array.isArray(categories) ? categories : [categories],
+        categories,
+        //categories: Array.isArray(categories) ? categories : [categories],
         subCategories: Array.isArray(subCategories) ? subCategories : [subCategories],
       });
 
@@ -108,7 +109,7 @@ exports.updatePost = [
     try {
       const { description, platform, usernameOrName, location, categories, subCategories } = req.body;
 
-      // Handle updated media files if present
+    
       const mediaURLs = req.files && req.files['mediaUrl'] ? req.files['mediaUrl'].map(file => file.path) : null;
 
       const updateData = {
@@ -116,11 +117,11 @@ exports.updatePost = [
         platform,
         usernameOrName,
         location,
-        categories: Array.isArray(categories) ? categories : [categories],
+        categories,
+        //categories: Array.isArray(categories) ? categories : [categories],
         subCategories: Array.isArray(subCategories) ? subCategories : [subCategories],
       };
 
-      // Only update mediaUrl if new files are uploaded
       if (mediaURLs) {
         updateData.mediaUrl = mediaURLs[0];
       }
@@ -142,6 +143,7 @@ exports.updatePost = [
 // Delete a post by ID
 exports.deletePost = async (req, res) => {
   const postId = req.params.id;
+  console.log("id ethann: " +postId)
   try {
     const deletedPost = await Media.findByIdAndDelete(postId);
     if (!deletedPost) {
@@ -153,17 +155,47 @@ exports.deletePost = async (req, res) => {
   }
 };
 
-// Get all feeds (posts)
+
+
+
+const getMediaType = (url) => {
+  const videoExtensions = ['.mp4', '.mov'];
+  const imageExtensions = ['.jpg', '.jpeg', '.png'];
+
+  // Extract the file extension from the URL
+  const extension = url.slice((url.lastIndexOf(".") - 1 >>> 0) + 2).toLowerCase();
+
+  if (videoExtensions.includes(`.${extension}`)) {
+    return 'video';
+  } else if (imageExtensions.includes(`.${extension}`)) {
+    return 'image';
+  } else {
+    return 'unknown';
+  }
+};
+
+
+
 exports.getAllFeeds = async (req, res) => {
   try {
     const feeds = await Media.find({});
-    res.json(feeds);
+
+    // Add mediaType to each feed
+    const feedsWithMediaType = feeds.map(feed => {
+      const mediaType = getMediaType(feed.mediaUrl[0]); // Assuming the first media URL determines the type
+      return {
+        ...feed.toObject(),
+        mediaType
+      };
+    });
+
+    res.json(feedsWithMediaType);
   } catch (err) {
     res.status(500).json({ message: 'Error fetching feeds', error: err.message });
   }
 };
 
-// Get a single feed by ID
+
 exports.getFeedById = async (req, res) => {
   const postId = req.params.id;
   try {
@@ -171,8 +203,17 @@ exports.getFeedById = async (req, res) => {
     if (!feed) {
       return res.status(404).json({ message: 'Feed not found' });
     }
-    res.json(feed);
+
+    // Add mediaType to the feed
+    const mediaType = getMediaType(feed.mediaUrl[0]); // Assuming the first media URL determines the type
+    const feedWithMediaType = {
+      ...feed.toObject(),
+      mediaType
+    };
+
+    res.json(feedWithMediaType);
   } catch (err) {
     res.status(500).json({ message: 'Error fetching feed', error: err.message });
   }
 };
+
