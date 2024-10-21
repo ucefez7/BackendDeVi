@@ -257,8 +257,6 @@ exports.getAllPosts = async (req, res, next) => {
 
     const posts = await PostModel.find({
       isBlocked: false,
-      isArchived: false,
-      //isArchived: false || null,
       _id: { $nin: excludedPostIds },
       userId: { $nin: notInterestedUserIds },
     })
@@ -342,10 +340,6 @@ exports.getPostById = async (req, res, next) => {
 
     if (!post) {
       throw createHttpError(404, 'No Post found with this ID');
-    }
-
-    if (post.isArchived) {
-      return res.status(403).json({ message: 'This post is archived and cannot be viewed.' });
     }
 
     const user = post.userId;
@@ -784,16 +778,13 @@ exports.getPostsByUser = async (req, res, next) => {
     const posts = await PostModel.find({
         userId,
         isBlocked: false,
-        isArchived: false,
-        //isArchived: false || null,
         _id: { $nin: reportedPostIds }
       })
       .populate({
         path: 'userId',
         select: 'username profession name profileImg',
       })
-      .sort({ pinned: -1, pinnedAt: -1, createdAt: -1 });
-      //.sort({ createdAt: -1 });
+      .sort({ createdAt: -1 });
 
     if (!posts.length) {
       return res.status(404).json({ message: 'No posts found for this user' });
@@ -852,8 +843,6 @@ exports.getPostsByUser = async (req, res, next) => {
 
 
 
-
-
 exports.getPostsByCategory = async (req, res, next) => {
   const { category } = req.params;
   const userId = req.user.id;
@@ -871,8 +860,6 @@ exports.getPostsByCategory = async (req, res, next) => {
     const posts = await PostModel.find({
         category: { $regex: new RegExp(`^${category}$`, 'i') },
         isBlocked: false,
-        isArchived: false,
-        //isArchived: false || null,
         _id: { $nin: excludedPostIds },
         userId: { $nin: notInterestedUserIds },
       })
@@ -1107,163 +1094,6 @@ exports.removeNotInterested = async (req, res, next) => {
     res.status(200).json({ message: 'Post removed from Not Interested list' });
   } catch (error) {
     console.error(error);
-    next(error);
-  }
-};
-
-
-
-
-
-
-
-
-//Archieve and pin
-
-exports.archivePost = async (req, res, next) => {
-  const userId = req.user.id;
-  const { postId } = req.params;
-
-  try {
-    const post = await PostModel.findById(postId);
-
-    if (!post) {
-      return res.status(404).json({ error: 'Post not found' });
-    }
-
-    if (post.userId.toString() !== userId) {
-      return res.status(401).json({ error: "You are not authorized to archive this post" });
-    }
-
-    post.isArchived = true;
-    await post.save();
-
-    res.status(200).json({ message: 'Post archived successfully' });
-  } catch (error) {
-    next(error);
-  }
-};
-
-
-exports.unarchivePost = async (req, res, next) => {
-  const userId = req.user.id;
-  const { postId } = req.params;
-
-  try {
-    const post = await PostModel.findById(postId);
-
-    if (!post) {
-      return res.status(404).json({ error: 'Post not found' });
-    }
-
-    if (post.userId.toString() !== userId) {
-      return res.status(401).json({ error: "You are not authorized to unarchive this post" });
-    }
-
-    if (!post.isArchived) {
-      return res.status(400).json({ error: 'Post is not archived' });
-    }
-
-    post.isArchived = false;
-    await post.save();
-
-    res.status(200).json({ message: 'Post unarchived successfully' });
-  } catch (error) {
-    next(error);
-  }
-};
-
-
-
-
-exports.getArchivedPosts = async (req, res, next) => {
-  const userId = req.user.id;
-
-  try {
-    const archivedPosts = await PostModel.find({ userId, isArchived: true })
-      .populate('userId', 'username name profession')
-      .sort({ createdAt: -1 });
-
-    if (!archivedPosts.length) {
-      return res.status(404).json({ message: 'No archived posts found' });
-    }
-
-    res.status(200).json(archivedPosts);
-  } catch (error) {
-    next(error);
-  }
-};
-
-
-
-exports.getArchivedPostById = async (req, res, next) => {
-  const { postId } = req.params;
-  const userId = req.user.id;
-
-  try {
-    const post = await PostModel.findOne({ _id: postId, isArchived: true, userId });
-
-    if (!post) {
-      return res.status(404).json({ error: 'Archived post not found' });
-    }
-
-    res.status(200).json(post);
-  } catch (error) {
-    next(error);
-  }
-};
-
-
-
-
-
-
-// Pin a post (max 5 pinned posts)
-exports.pinPost = async (req, res, next) => {
-  const userId = req.user.id;
-  const { postId } = req.params;
-
-  try {
-    
-    const post = await PostModel.findOne({ _id: postId, userId });
-    if (!post) {
-      return res.status(404).json({ error: 'Post not found or you do not have permission to pin this post' });
-    }
-
-   
-    const pinnedCount = await PostModel.countDocuments({ userId, isPinned: true });
-    if (pinnedCount >= 5) {
-      return res.status(400).json({ error: 'You can only pin up to 5 posts' });
-    }
-
-    
-    post.isPinned = true;
-    post.pinnedAt = new Date();
-    await post.save();
-
-    res.status(200).json({ message: 'Post pinned successfully', post });
-  } catch (error) {
-    next(error);
-  }
-};
-
-// Unpin a post
-exports.unpinPost = async (req, res, next) => {
-  const userId = req.user.id;
-  const { postId } = req.params;
-
-  try {
-   
-    const post = await PostModel.findOne({ _id: postId, userId });
-    if (!post) {
-      return res.status(404).json({ error: 'Post not found or you do not have permission to unpin this post' });
-    }
-    post.isPinned = false;
-    post.pinnedAt = null;
-    await post.save();
-
-    res.status(200).json({ message: 'Post unpinned successfully', post });
-  } catch (error) {
     next(error);
   }
 };

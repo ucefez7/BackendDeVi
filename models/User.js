@@ -14,6 +14,7 @@ const UserSchema = new mongoose.Schema({
   mailAddress: { type: String, required: true},
   bio: { type: String},
   website: { type: String},
+  bgColor: {type: String},
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
   blockedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]

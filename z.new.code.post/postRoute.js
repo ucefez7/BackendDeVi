@@ -41,18 +41,4 @@ router.post('/posts/not-interested/:postId', userAuthMiddleware, postController.
 router.post('/posts/not-interested', userAuthMiddleware, postController.getNotInterestedPosts);
 router.delete('/posts/not-interested/:postId', userAuthMiddleware, postController.removeNotInterested);
 
-
-
-//Archieve posts
-router.post('/archive/:postId',userAuthMiddleware, postController.archivePost);
-router.post('/unarchive/:postId', userAuthMiddleware, postController.unarchivePost);
-router.get('/archived', userAuthMiddleware, postController.getArchivedPosts);
-router.get('/archived/:postId', userAuthMiddleware, postController.getArchivedPostById);
-
-
-//Pin a post
-router.post('/posts/pin/:postId', userAuthMiddleware, postController.pinPost);
-router.post('/posts/unpin/:postId', userAuthMiddleware, postController.unpinPost);
-
-
 module.exports = router;

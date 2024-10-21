@@ -268,7 +268,8 @@ exports.signupUser = async function (req, res) {
     profileImg,
     isUser = false,
     isCreator = false,
-    isVerified = false
+    isVerified = false,
+    bgColor,
   } = req.body;
 
   console.log('Incoming request to signupUser:', req.body);
@@ -293,7 +294,8 @@ exports.signupUser = async function (req, res) {
       profession,
       bio,
       website,
-      profileImg
+      profileImg,
+      bgColor
     });
 
     await user.save();
@@ -318,6 +320,7 @@ exports.signupUser = async function (req, res) {
       bio: user.bio,
       website: user.website,
       profileImg: user.profileImg,
+      bgColor: user.bgColor,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt
     };
@@ -332,48 +335,17 @@ exports.signupUser = async function (req, res) {
 
 
 
-// // Update user by ID
-// exports.updateUser = async function (req, res) {
-//   try {
-//     const user = await User.findByIdAndUpdate(req.params.id, req.body, { new: true });
-//     if (!user) return res.status(404).json({ message: 'User not found' });
-
-//     const userResponse = {
-//       userId: user._id,
-//       isUser: user.isUser,
-//       isCreator: user.isCreator,
-//       isVerified: user.isVerified,
-//       name: user.name,
-//       username: user.username,
-//       gender: user.gender,
-//       dob: user.dob,
-//       phoneNumber: user.phoneNumber,
-//       mailAddress: user.mailAddress,
-//       profession: user.profession,
-//       bio: user.bio,
-//       website: user.website,
-//       profileImg: user.profileImg,
-//       createdAt: user.createdAt,
-//       updatedAt: user.updatedAt
-//     };
-
-//     res.json(userResponse);
-//   } catch (err) {
-//     res.status(400).json({ message: err.message });
-//   }
-// };
-
 
 
 
 // Update user by ID (Excluding phoneNumber, username, mailAddress from update)
 exports.updateUser = async function (req, res) {
   try {
-    const { name, gender, dob, profession, bio, website, profileImg } = req.body;
+    const { name, gender, dob, profession, bio, website, profileImg, bgColor } = req.body;
 
     const user = await User.findByIdAndUpdate(
       req.user.id, 
-      { name, gender, dob, profession, bio, website, profileImg, updatedAt: Date.now() },
+      { name, gender, dob, profession, bio, website, profileImg, bgColor, updatedAt: Date.now() },
       { new: true }
     );
 
@@ -394,6 +366,7 @@ exports.updateUser = async function (req, res) {
       bio: user.bio,
       website: user.website,
       profileImg: user.profileImg,
+      bgColor: user.bgColor,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt
     };
